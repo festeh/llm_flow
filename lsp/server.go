@@ -12,13 +12,184 @@ import (
 // Server represents an LSP server instance
 type Server struct {
 	documents map[string]string
+	writer    io.Writer
 }
 
 // NewServer creates a new LSP server instance
-func NewServer() *Server {
+func NewServer(w io.Writer) *Server {
 	return &Server{
 		documents: make(map[string]string),
+		writer:    w,
 	}
+}
+
+// HandleMessage processes a single LSP message
+func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
+	// Parse the JSON-RPC message
+	var header struct {
+		Method string          `json:"method"`
+		ID     interface{}     `json:"id,omitempty"`
+		Params json.RawMessage `json:"params"`
+	}
+	if err := json.Unmarshal(message, &header); err != nil {
+		return fmt.Errorf("error parsing message: %v", err)
+	}
+
+	// Handle different methods
+	var result interface{}
+	var handleErr error
+
+	switch header.Method {
+	case "initialize":
+		var params InitializeParams
+		json.Unmarshal(header.Params, &params)
+		result, handleErr = s.Initialize(ctx, &params)
+
+	case "initialized":
+		handleErr = s.Initialized(ctx)
+
+	case "shutdown":
+		handleErr = s.Shutdown(ctx)
+
+	case "exit":
+		handleErr = s.Exit(ctx)
+		os.Exit(0)
+
+	case "textDocument/didOpen":
+		var params DidOpenTextDocumentParams
+		json.Unmarshal(header.Params, &params)
+		handleErr = s.TextDocumentDidOpen(ctx, &params)
+
+	case "textDocument/didChange":
+		var params DidChangeTextDocumentParams
+		json.Unmarshal(header.Params, &params)
+		handleErr = s.TextDocumentDidChange(ctx, &params)
+
+	case "textDocument/completion":
+		result, handleErr = s.TextDocumentCompletion(ctx, header.Params)
+
+	case "predict":
+		pr, pw := io.Pipe()
+		go func() {
+			defer pw.Close()
+			if err := s.Predict(ctx, pw); err != nil {
+				log.Printf("Prediction error: %v", err)
+			}
+		}()
+
+		scanner := bufio.NewScanner(pr)
+		for scanner.Scan() {
+			response := map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "predict/response",
+				"params": PredictResponse{
+					Content: scanner.Text(),
+				},
+			}
+			s.sendResponse(response)
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("unknown method: %s", header.Method)
+	}
+
+	// Send response for requests (methods with IDs)
+	if header.ID != nil {
+		response := map[string]interface{}{
+			"jsonrpc": "2.0",
+			"id":      header.ID,
+		}
+		if handleErr != nil {
+			response["error"] = map[string]interface{}{
+				"code":    -32603,
+				"message": handleErr.Error(),
+			}
+		} else {
+			response["result"] = result
+		}
+		s.sendResponse(response)
+	}
+
+	return handleErr
+}
+
+func (s *Server) sendResponse(response interface{}) error {
+	responseBytes, err := json.Marshal(response)
+	if err != nil {
+		return fmt.Errorf("error marshaling response: %v", err)
+	}
+
+	fmt.Fprintf(s.writer, "Content-Length: %d\r\n", len(responseBytes))
+	fmt.Fprintf(s.writer, "\r\n")
+	fmt.Fprintf(s.writer, "%s", responseBytes)
+	return nil
+}
+
+// Serve starts the LSP server on the specified address
+func (s *Server) Serve(ctx context.Context, addr string) error {
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("failed to start server: %v", err)
+	}
+	defer listener.Close()
+
+	log.Printf("LSP server listening on %s", addr)
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			log.Printf("Error accepting connection: %v", err)
+			continue
+		}
+
+		go s.handleConnection(ctx, conn)
+	}
+}
+
+func (s *Server) handleConnection(ctx context.Context, conn net.Conn) {
+	defer conn.Close()
+
+	s.writer = conn
+	reader := bufio.NewReader(conn)
+
+	for {
+		message, err := readMessage(reader)
+		if err != nil {
+			if err != io.EOF {
+				log.Printf("Error reading message: %v", err)
+			}
+			return
+		}
+
+		if err := s.HandleMessage(ctx, message); err != nil {
+			log.Printf("Error handling message: %v", err)
+		}
+	}
+}
+
+func readMessage(r *bufio.Reader) ([]byte, error) {
+	var contentLength int
+
+	// Read headers
+	for {
+		header, err := r.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
+		header = strings.TrimSpace(header)
+		if header == "" {
+			break
+		}
+		if strings.HasPrefix(header, "Content-Length: ") {
+			fmt.Sscanf(header, "Content-Length: %d", &contentLength)
+		}
+	}
+
+	// Read content
+	content := make([]byte, contentLength)
+	_, err := io.ReadFull(r, content)
+	return content, err
 }
 
 // Initialize handles the LSP initialize request
