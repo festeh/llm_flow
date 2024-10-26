@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 
 	"go.lsp.dev/jsonrpc2"
@@ -47,11 +48,17 @@ func (c *PredictClient) Predict(ctx context.Context) error {
 func main() {
 	ctx := context.Background()
 
-	// Connect to server's stdin/stdout
-	stream := jsonrpc2.NewStream(os.Stdin)
-	conn := jsonrpc2.NewConn(stream)
+	// Connect to server on port 7777
+	conn, err := net.Dial("tcp", "localhost:7777")
+	if err != nil {
+		log.Fatalf("Failed to connect to server: %v", err)
+	}
+	defer conn.Close()
+
+	stream := jsonrpc2.NewStream(conn)
+	rpcConn := jsonrpc2.NewConn(stream)
 	
-	client := &PredictClient{conn: conn}
+	client := &PredictClient{conn: rpcConn}
 
 	// Call predict and print results
 	if err := client.Predict(ctx); err != nil {
