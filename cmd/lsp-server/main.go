@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -78,6 +79,30 @@ func main() {
 
 		case "textDocument/completion":
 			result, handleErr = server.TextDocumentCompletion(ctx, header.Params)
+
+		case "predict":
+			// Create a pipe to handle streaming
+			pr, pw := io.Pipe()
+			go func() {
+				defer pw.Close()
+				if err := server.Predict(ctx, pw); err != nil {
+					log.Printf("Prediction error: %v", err)
+				}
+			}()
+
+			// Read from pipe and send each line as a response
+			scanner := bufio.NewScanner(pr)
+			for scanner.Scan() {
+				response := map[string]interface{}{
+					"jsonrpc": "2.0",
+					"method": "predict/response",
+					"params": PredictResponse{
+						Content: scanner.Text(),
+					},
+				}
+				sendResponse(response)
+			}
+			continue
 
 		default:
 			log.Printf("Unknown method: %s", header.Method)

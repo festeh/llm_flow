@@ -66,3 +66,13 @@ type CompletionList struct {
 	IsIncomplete bool             `json:"isIncomplete"`
 	Items        []CompletionItem `json:"items"`
 }
+
+// PredictParams represents parameters for predict request
+type PredictParams struct {
+	Text string `json:"text"`
+}
+
+// PredictResponse represents a single prediction response
+type PredictResponse struct {
+	Content string `json:"content"`
+}
