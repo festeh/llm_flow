@@ -19,6 +19,10 @@ func (s *BaseServer) CodeLensRefresh(ctx context.Context) error {
     return nil
 }
 
+func (s *BaseServer) CodeLensResolve(ctx context.Context, params *protocol.CodeLens) (*protocol.CodeLens, error) {
+    return nil, nil
+}
+
 func (s *BaseServer) Declaration(ctx context.Context, params *protocol.DeclarationParams) ([]protocol.Location, error) {
     return nil, nil
 }
