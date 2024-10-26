@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/festeh/llm_flow/lsp"
 )
 
 func main() {
