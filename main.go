@@ -2,22 +2,18 @@ package main
 
 import (
 	"context"
-	"os"
-
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"os"
 )
 
 func main() {
-	ctx := context.Background()
-
 	stream := jsonrpc2.NewStream(os.Stdin)
-	conn := jsonrpc2.NewConn(stream)
-	
 	server := &Server{}
-	handler := protocol.ServerHandler(server, conn)
-	conn.Go(handler.Handle)
-	<-ctx.Done()
+	ctx := context.Background()
+	conn := jsonrpc2.NewConn(stream)
+	handler := protocol.ServerHandler(server, jsonrpc2.MethodNotFoundHandler)
+	conn.Go(ctx, handler)
 
 	<-conn.Done()
 }
