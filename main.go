@@ -6,7 +6,6 @@ import (
 	"go.lsp.dev/protocol"
 	"log"
 	"net"
-	"os"
 )
 
 func main() {

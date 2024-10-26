@@ -6,18 +6,17 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 
 	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/protocol"
 )
 
 type PredictClient struct {
-	conn *jsonrpc2.Conn
+	conn jsonrpc2.Conn
 }
 
 func (c *PredictClient) Predict(ctx context.Context) error {
 	// Create a pipe to receive streaming results
+	fmt.Println("Called Predict")
 	pr, pw := io.Pipe()
 
 	// Start goroutine to read from pipe and print to stdout
@@ -37,7 +36,8 @@ func (c *PredictClient) Predict(ctx context.Context) error {
 	}()
 
 	// Call Predict method
-	err := c.conn.Call(ctx, "Predict", nil, pw)
+	id, err := c.conn.Call(ctx, "Predict", nil, pw)
+	fmt.Println(id)
 	if err != nil {
 		return fmt.Errorf("predict call failed: %w", err)
 	}
@@ -53,11 +53,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %v", err)
 	}
+	log.Println("Connected")
 	defer conn.Close()
 
 	stream := jsonrpc2.NewStream(conn)
 	rpcConn := jsonrpc2.NewConn(stream)
-	
+
 	client := &PredictClient{conn: rpcConn}
 
 	// Call predict and print results
@@ -65,5 +66,5 @@ func main() {
 		log.Fatalf("Prediction failed: %v", err)
 	}
 
-	<-conn.Done()
+	// <-conn
 }

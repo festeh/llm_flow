@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"time"
 
 	"go.lsp.dev/protocol"
 )
-
 
 // Server embeds BaseServer to inherit all default implementations
 type Server struct {
@@ -84,6 +84,7 @@ func (s *Server) CodeAction(ctx context.Context, params *protocol.CodeActionPara
 }
 
 func (s *Server) Predict(ctx context.Context, writer io.Writer) error {
+  fmt.Println("Called Predict")
 	ticker := time.NewTicker(300 * time.Millisecond)
 	defer ticker.Stop()
 
