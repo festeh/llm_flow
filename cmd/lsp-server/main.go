@@ -8,6 +8,7 @@ import (
 	"github.com/festeh/llm_flow/lsp"
 )
 
+
 func main() {
 	// Set up logging to a file
 	logFile, err := os.OpenFile("lsp-server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)

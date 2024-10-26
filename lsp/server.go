@@ -1,11 +1,15 @@
 package lsp
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"net"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -195,10 +199,10 @@ func readMessage(r *bufio.Reader) ([]byte, error) {
 // Initialize handles the LSP initialize request
 func (s *Server) Initialize(ctx context.Context, params *InitializeParams) (*InitializeResult, error) {
 	log.Printf("Initialize request received. Root URI: %s", params.RootURI)
-	
+
 	return &InitializeResult{
 		Capabilities: ServerCapabilities{
-			TextDocumentSync:    1, // Incremental sync
+			TextDocumentSync:   1, // Incremental sync
 			CompletionProvider: true,
 		},
 	}, nil
