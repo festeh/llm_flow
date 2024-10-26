@@ -78,7 +78,7 @@ func (s *BaseServer) OnTypeFormatting(ctx context.Context, params *protocol.Docu
                 Start: protocol.Position{Line: params.Position.Line, Character: 0},
                 End:   protocol.Position{Line: params.Position.Line, Character: params.Position.Character},
             },
-            NewText: "    " + params.Ch, // Add indentation and the typed character
+            NewText: "// Formatted on type: " + params.Ch,
         },
     }, nil
 }
