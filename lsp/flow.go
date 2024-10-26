@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/festeh/llm_flow/lsp/provider"
@@ -15,14 +14,12 @@ import (
 )
 
 func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w io.Writer) error {
-	log.Printf("Flow: using provider %s", p.Name())
 
-	data := make(map[string]string)
-	if err := splitter(&data); err != nil {
-		return fmt.Errorf("error splitting text: %v", err)
+	if p, ok := p.(*provider.Dummy); ok {
+		return p.Predict(ctx, w, splitter)
 	}
 
-	reqBody, err := p.GetRequestBody(data["prefix"], data["suffix"])
+	reqBody, err := p.GetRequestBody(splitter)
 	if err != nil {
 		return fmt.Errorf("error getting request body: %v", err)
 	}
@@ -32,7 +29,9 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 		return fmt.Errorf("error marshaling request: %v", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.mistral.ai/v1/fim/completions", bytes.NewBuffer(jsonBody))
+	fmt.Println(string(jsonBody))
+
+	req, err := http.NewRequestWithContext(ctx, "POST", p.Endpoint(), bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return fmt.Errorf("error creating request: %v", err)
 	}
@@ -43,6 +42,7 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	fmt.Println(resp)
 	if err != nil {
 		return fmt.Errorf("error making request: %v", err)
 	}

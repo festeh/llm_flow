@@ -17,7 +17,7 @@ func (b Dummy) Name() string {
 }
 
 func (b *Dummy) Predict(ctx context.Context, w io.Writer, splitter splitter.SplitFn) error {
-	data := make(map[string]string)
+	data := make(map[string]interface{})
 	if err := splitter(&data); err != nil {
 		log.Println("error (!) splitting text into prefix and suffix")
 		return err
@@ -34,4 +34,16 @@ func (b *Dummy) Predict(ctx context.Context, w io.Writer, splitter splitter.Spli
 		}
 	}
 	return nil
+}
+
+func (b Dummy) GetAuthHeader() string {
+	return "dummy"
+}
+
+func (b Dummy) GetRequestBody(splitter.SplitFn) (map[string]interface{}, error) {
+	return map[string]interface{}{}, nil
+}
+
+func (b Dummy) Endpoint() string {
+  return "dummy"
 }
