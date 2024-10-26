@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"flag"
 )
 
 type jsonrpcMessage struct {
@@ -18,7 +19,12 @@ type jsonrpcMessage struct {
 }
 
 func main() {
-	conn, err := net.Dial("tcp", "localhost:7777")
+	port := flag.Int("port", 7777, "Server port to connect to")
+	input := flag.String("input", "sample text", "Input text for prediction")
+	flag.Parse()
+
+	serverAddr := fmt.Sprintf("localhost:%d", *port)
+	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %v", err)
 	}
@@ -29,7 +35,7 @@ func main() {
 		JSONRPC: "2.0",
 		ID:      1,
 		Method:  "predict",
-		Params:  map[string]string{"text": "sample text"},
+		Params:  map[string]string{"text": *input},
 	}
 
 	// Marshal and send the request
