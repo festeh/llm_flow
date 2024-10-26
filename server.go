@@ -135,6 +135,10 @@ func (s *BaseServer) SetTrace(ctx context.Context, params *protocol.SetTracePara
     return nil
 }
 
+func (s *BaseServer) LinkedEditingRange(ctx context.Context, params *protocol.LinkedEditingRangeParams) (*protocol.LinkedEditingRanges, error) {
+    return &protocol.LinkedEditingRanges{}, nil
+}
+
 // Server embeds BaseServer to inherit all default implementations
 type Server struct {
     BaseServer
@@ -233,10 +237,6 @@ func (s *Server) SemanticTokensRange(ctx context.Context, params *protocol.Seman
 
 func (s *Server) SemanticTokensRefresh(ctx context.Context) error {
     return nil
-}
-
-func (s *Server) LinkedEditingRange(ctx context.Context, params *protocol.LinkedEditingRangeParams) (*protocol.LinkedEditingRanges, error) {
-    return &protocol.LinkedEditingRanges{}, nil
 }
 
 func (s *Server) Moniker(ctx context.Context, params *protocol.MonikerParams) ([]protocol.Moniker, error) {
