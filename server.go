@@ -59,6 +59,10 @@ func (s *Server) Completion(ctx context.Context, params *protocol.CompletionPara
 	}, nil
 }
 
+func (s *Server) CodeAction(ctx context.Context, params *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
+	return nil, nil
+}
+
 func (s *Server) Predict(ctx context.Context, writer io.Writer) error {
 	ticker := time.NewTicker(300 * time.Millisecond)
 	defer ticker.Stop()
