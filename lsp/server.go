@@ -255,7 +255,7 @@ func (s *Server) Predict(ctx context.Context, w io.Writer) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(300 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond):
 			if _, err := fmt.Fprintln(w, "foo"); err != nil {
 				return err
 			}
