@@ -54,7 +54,15 @@ func (s *BaseServer) DocumentSymbol(ctx context.Context, params *protocol.Docume
 }
 
 func (s *BaseServer) FoldingRange(ctx context.Context, params *protocol.FoldingRangeParams) ([]protocol.FoldingRange, error) {
-	return nil, nil
+	return []protocol.FoldingRange{
+		{
+			StartLine:      0,
+			StartCharacter: 0,
+			EndLine:        10,
+			EndCharacter:   0,
+			Kind:          "region",
+		},
+	}, nil
 }
 
 func (s *BaseServer) Formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
