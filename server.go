@@ -72,7 +72,15 @@ func (s *BaseServer) Implementation(ctx context.Context, params *protocol.Implem
 }
 
 func (s *BaseServer) OnTypeFormatting(ctx context.Context, params *protocol.DocumentOnTypeFormattingParams) ([]protocol.TextEdit, error) {
-    return nil, nil
+    return []protocol.TextEdit{
+        {
+            Range: protocol.Range{
+                Start: protocol.Position{Line: params.Position.Line, Character: 0},
+                End:   protocol.Position{Line: params.Position.Line, Character: params.Position.Character},
+            },
+            NewText: "    " + params.Ch, // Add indentation and the typed character
+        },
+    }, nil
 }
 
 func (s *BaseServer) PrepareRename(ctx context.Context, params *protocol.PrepareRenameParams) (*protocol.Range, error) {
