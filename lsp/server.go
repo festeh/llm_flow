@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/festeh/llm_flow/lsp/backend"
 	"io"
 	"log"
 	"net"
@@ -19,7 +20,7 @@ type Server struct {
 	writer    io.Writer
 	mu        sync.Mutex
 	clients   map[net.Conn]struct{}
-	backends  map[string]Backend
+	backends  map[string]backend.Backend
 }
 
 // NewServer creates a new LSP server instance
@@ -28,8 +29,9 @@ func NewServer(w io.Writer) *Server {
 		documents: make(map[string]string),
 		writer:    w,
 		clients:   make(map[net.Conn]struct{}),
-		backends:  map[string]Backend{
-			"dummy": NewDummyBackend(),
+		backends: map[string]backend.Backend{
+			"dummy": backend.NewDummyBackend(),
+			"fim":   backend.NewFimBackend(),
 		},
 	}
 }
@@ -90,7 +92,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		if params.Backend == "" {
 			params.Backend = "dummy" // default to dummy backend
 		}
-		
+
 		pr, pw := io.Pipe()
 		go func() {
 			defer pw.Close()
@@ -155,7 +157,7 @@ func (s *Server) sendResponse(response interface{}) error {
 	if _, err := s.writer.Write(message); err != nil {
 		return fmt.Errorf("error writing response: %v", err)
 	}
-	
+
 	return nil
 }
 
@@ -196,7 +198,7 @@ func (s *Server) handleConnection(ctx context.Context, conn net.Conn) {
 	}()
 
 	log.Printf("New client connected: %v", conn.RemoteAddr())
-	
+
 	// Create a connection-specific writer
 	connWriter := conn
 	reader := bufio.NewReader(conn)

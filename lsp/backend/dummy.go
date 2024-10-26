@@ -1,4 +1,4 @@
-package lsp
+package backend
 
 import (
 	"context"
@@ -6,11 +6,6 @@ import (
 	"io"
 	"time"
 )
-
-// Backend defines the interface for prediction backends
-type Backend interface {
-	Predict(ctx context.Context, w io.Writer, text string) error
-}
 
 // DummyBackend implements a simple dummy backend that just echoes text
 type DummyBackend struct{}
