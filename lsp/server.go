@@ -79,6 +79,12 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 			if err := s.Predict(ctx, pw); err != nil {
 				log.Printf("Prediction error: %v", err)
 			}
+			// Send completion notification after prediction is done
+			response := map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "predict/complete",
+			}
+			s.sendResponse(response)
 		}()
 
 		scanner := bufio.NewScanner(pr)

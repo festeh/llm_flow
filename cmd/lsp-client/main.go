@@ -57,7 +57,10 @@ func main() {
 			continue
 		}
 
-		if response.Method == "predict/response" {
+		if response.Method == "predict/complete" {
+			fmt.Println("Prediction complete")
+			return
+		} else if response.Method == "predict/response" {
 			var predictResponse struct {
 				Content string `json:"content"`
 			}
