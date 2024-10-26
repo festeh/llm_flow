@@ -48,7 +48,7 @@ func main() {
 	ctx := context.Background()
 
 	// Connect to server's stdin/stdout
-	stream := jsonrpc2.NewStream(os.Stdout)
+	stream := jsonrpc2.NewStream(os.Stdin)
 	conn := jsonrpc2.NewConn(stream)
 	
 	client := &PredictClient{conn: conn}
