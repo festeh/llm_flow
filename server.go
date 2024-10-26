@@ -139,6 +139,66 @@ func (s *BaseServer) LinkedEditingRange(ctx context.Context, params *protocol.Li
     return &protocol.LinkedEditingRanges{}, nil
 }
 
+func (s *BaseServer) CompletionResolve(ctx context.Context, params *protocol.CompletionItem) (*protocol.CompletionItem, error) {
+    return params, nil
+}
+
+func (s *BaseServer) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
+    return nil
+}
+
+func (s *BaseServer) DidChangeWatchedFiles(ctx context.Context, params *protocol.DidChangeWatchedFilesParams) error {
+    return nil
+}
+
+func (s *BaseServer) DidChangeWorkspaceFolders(ctx context.Context, params *protocol.DidChangeWorkspaceFoldersParams) error {
+    return nil
+}
+
+func (s *BaseServer) DocumentLinkResolve(ctx context.Context, params *protocol.DocumentLink) (*protocol.DocumentLink, error) {
+    return params, nil
+}
+
+func (s *BaseServer) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
+    return nil, nil
+}
+
+func (s *BaseServer) ShowDocument(ctx context.Context, params *protocol.ShowDocumentParams) (*protocol.ShowDocumentResult, error) {
+    return &protocol.ShowDocumentResult{Success: true}, nil
+}
+
+func (s *BaseServer) WillCreateFiles(ctx context.Context, params *protocol.CreateFilesParams) (*protocol.WorkspaceEdit, error) {
+    return &protocol.WorkspaceEdit{}, nil
+}
+
+func (s *BaseServer) DidCreateFiles(ctx context.Context, params *protocol.CreateFilesParams) error {
+    return nil
+}
+
+func (s *BaseServer) WillRenameFiles(ctx context.Context, params *protocol.RenameFilesParams) (*protocol.WorkspaceEdit, error) {
+    return &protocol.WorkspaceEdit{}, nil
+}
+
+func (s *BaseServer) DidRenameFiles(ctx context.Context, params *protocol.RenameFilesParams) error {
+    return nil
+}
+
+func (s *BaseServer) WillDeleteFiles(ctx context.Context, params *protocol.DeleteFilesParams) (*protocol.WorkspaceEdit, error) {
+    return &protocol.WorkspaceEdit{}, nil
+}
+
+func (s *BaseServer) DidDeleteFiles(ctx context.Context, params *protocol.DeleteFilesParams) error {
+    return nil
+}
+
+func (s *BaseServer) Request(ctx context.Context, method string, params interface{}) (interface{}, error) {
+    return nil, nil
+}
+
+func (s *BaseServer) Symbols(ctx context.Context, params *protocol.WorkspaceSymbolParams) ([]protocol.SymbolInformation, error) {
+    return []protocol.SymbolInformation{}, nil
+}
+
 // Server embeds BaseServer to inherit all default implementations
 type Server struct {
     BaseServer
