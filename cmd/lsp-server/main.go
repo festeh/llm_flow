@@ -8,8 +8,6 @@ import (
 	"log"
 	"os"
 	"strings"
-
-	"your-module-path/lsp"
 )
 
 func main() {
@@ -88,7 +86,7 @@ func main() {
 		if header.ID != nil {
 			response := map[string]interface{}{
 				"jsonrpc": "2.0",
-				"id":     header.ID,
+				"id":      header.ID,
 			}
 			if handleErr != nil {
 				response["error"] = map[string]interface{}{
