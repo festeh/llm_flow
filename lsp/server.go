@@ -3,7 +3,6 @@ package lsp
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 )
 
