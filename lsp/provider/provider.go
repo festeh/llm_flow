@@ -8,7 +8,7 @@ import (
 )
 
 type Provider interface {
-	Predict(ctx context.Context, w io.Writer, splitter splitter.SplitFn) error
+	// Name() string
 }
 
 func NewProvider(name string) (Provider, error) {
@@ -24,6 +24,10 @@ func NewProvider(name string) (Provider, error) {
 
 type Codestral struct {
 	key string
+}
+
+func (c *Codestral) Name() string {
+	return "codestral"
 }
 
 func newCodestral() (*Codestral, error) {

@@ -12,7 +12,9 @@ import (
 
 type Dummy struct{}
 
-var _ Provider = Dummy{} // Verify Dummy implements Provider interface
+func (b Dummy) Name() string {
+	return "dummy"
+}
 
 func (b *Dummy) Predict(ctx context.Context, w io.Writer, splitter splitter.SplitFn) error {
 	data := make(map[string]string)
