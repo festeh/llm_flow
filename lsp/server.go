@@ -77,10 +77,17 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		result, handleErr = s.TextDocumentCompletion(ctx, header.Params)
 
 	case "predict":
+		var params struct {
+			Text string `json:"text"`
+		}
+		if err := json.Unmarshal(header.Params, &params); err != nil {
+			return fmt.Errorf("invalid predict params: %v", err)
+		}
+		
 		pr, pw := io.Pipe()
 		go func() {
 			defer pw.Close()
-			if err := s.Predict(ctx, pw); err != nil {
+			if err := s.Predict(ctx, pw, params.Text); err != nil {
 				log.Printf("Prediction error: %v", err)
 			}
 			// Send completion notification after prediction is done
@@ -313,13 +320,13 @@ func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTex
 }
 
 // Predict streams predictions with a delay between each one
-func (s *Server) Predict(ctx context.Context, w io.Writer) error {
+func (s *Server) Predict(ctx context.Context, w io.Writer, text string) error {
 	for i := 0; i < 10; i++ {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(10 * time.Millisecond):
-			if _, err := fmt.Fprintln(w, "foo"); err != nil {
+			if _, err := fmt.Fprintln(w, text); err != nil {
 				return err
 			}
 		}
