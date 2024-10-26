@@ -192,14 +192,28 @@ func readMessage(r *bufio.Reader) ([]byte, error) {
 			break
 		}
 		if strings.HasPrefix(header, "Content-Length: ") {
-			fmt.Sscanf(header, "Content-Length: %d", &contentLength)
+			if _, err := fmt.Sscanf(header, "Content-Length: %d", &contentLength); err != nil {
+				return nil, fmt.Errorf("invalid Content-Length header: %v", err)
+			}
 		}
 	}
 
-	// Read content
+	if contentLength == 0 {
+		return nil, fmt.Errorf("no Content-Length header found")
+	}
+
+	// Read exactly contentLength bytes
 	content := make([]byte, contentLength)
-	_, err := io.ReadFull(r, content)
-	return content, err
+	if _, err := io.ReadFull(r, content); err != nil {
+		return nil, fmt.Errorf("failed to read message content: %v", err)
+	}
+
+	// Verify it's valid JSON
+	if !json.Valid(content) {
+		return nil, fmt.Errorf("invalid JSON content: %s", content)
+	}
+
+	return content, nil
 }
 
 // Initialize handles the LSP initialize request
