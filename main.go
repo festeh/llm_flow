@@ -15,8 +15,9 @@ func main() {
 	conn := jsonrpc2.NewConn(stream)
 	
 	server := &Server{}
-	handler := protocol.ServerHandler(server, conn)
-	handler.Handle(ctx)
+	handler := protocol.ServerHandler(server, conn.Handler)
+	conn.Handler = handler
+	<-ctx.Done()
 
 	<-conn.Done()
 }
