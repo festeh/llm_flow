@@ -44,7 +44,7 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	fmt.Println(resp)
+	log.Println(resp)
 	if err != nil {
 		return fmt.Errorf("error making request: %v", err)
 	}
@@ -60,19 +60,22 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 		if content == "[DONE]" {
 			break
 		}
-		log.Println(content)
 		var streamResp struct {
 			Choices []struct {
-				Text string `json:"text"`
+				Delta struct {
+					Content string `json:"content"`
+				} `json:"delta"`
 			} `json:"choices"`
 		}
 		if err := json.Unmarshal([]byte(content), &streamResp); err != nil {
 			return fmt.Errorf("error parsing response: %v", err)
 		}
-		choice := streamResp.Choices[0].Text
-		if _, err := w.Write([]byte(choice)); err != nil {
-			return fmt.Errorf("error writing response: %v", err)
-		}
+		choice := streamResp.Choices[0].Delta.Content
+		log.Println("Choice", choice)
+    _, err = fmt.Println(w, choice)
+    if err != nil {
+      return fmt.Errorf("error writing response: %v", err)
+    }
 	}
 
 	return scanner.Err()
