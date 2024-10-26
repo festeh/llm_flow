@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -17,6 +18,8 @@ import (
 type Server struct {
 	documents map[string]string
 	writer    io.Writer
+	mu        sync.Mutex
+	clients   map[net.Conn]struct{}
 }
 
 // NewServer creates a new LSP server instance
@@ -24,6 +27,7 @@ func NewServer(w io.Writer) *Server {
 	return &Server{
 		documents: make(map[string]string),
 		writer:    w,
+		clients:   make(map[net.Conn]struct{}),
 	}
 }
 
@@ -163,35 +167,62 @@ func (s *Server) Serve(ctx context.Context, addr string) error {
 }
 
 func (s *Server) handleConnection(ctx context.Context, conn net.Conn) {
+	// Add client to tracking
+	s.mu.Lock()
+	s.clients[conn] = struct{}{}
+	s.mu.Unlock()
+
+	// Ensure cleanup on exit
 	defer func() {
-		log.Printf("Client disconnected: %v", conn.RemoteAddr())
+		s.mu.Lock()
+		delete(s.clients, conn)
+		s.mu.Unlock()
 		conn.Close()
+		log.Printf("Client disconnected: %v", conn.RemoteAddr())
 	}()
 
 	log.Printf("New client connected: %v", conn.RemoteAddr())
-	s.writer = conn
+	
+	// Create a connection-specific writer
+	connWriter := conn
 	reader := bufio.NewReader(conn)
+
+	// Create a connection-specific context that we can cancel
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Handle connection errors in a separate goroutine
+	go func() {
+		<-ctx.Done()
+		conn.Close()
+	}()
 
 	for {
 		message, err := readMessage(reader)
 		if err != nil {
 			if err == io.EOF {
+				log.Printf("Client closed connection: %v", conn.RemoteAddr())
 				return
 			}
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				log.Printf("Connection timeout: %v", err)
+				log.Printf("Connection timeout: %v", conn.RemoteAddr())
 				return
 			}
 			if strings.Contains(err.Error(), "connection reset by peer") {
-				log.Printf("Client disconnected unexpectedly: %v", err)
+				log.Printf("Client disconnected: %v", conn.RemoteAddr())
 				return
 			}
-			log.Printf("Error reading message: %v", err)
+			log.Printf("Error reading message from %v: %v", conn.RemoteAddr(), err)
 			return
 		}
 
+		// Set the writer for this specific connection
+		s.mu.Lock()
+		s.writer = connWriter
+		s.mu.Unlock()
+
 		if err := s.HandleMessage(ctx, message); err != nil {
-			log.Printf("Error handling message: %v", err)
+			log.Printf("Error handling message from %v: %v", conn.RemoteAddr(), err)
 		}
 	}
 }
