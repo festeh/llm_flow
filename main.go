@@ -12,7 +12,7 @@ func main() {
 	ctx := context.Background()
 
 	stream := jsonrpc2.NewStream(os.Stdin)
-	conn := jsonrpc2.NewConn(ctx, stream, nil)
+	conn := jsonrpc2.NewConn(stream)
 	
 	server := &Server{}
 	handler := protocol.ServerHandler(server, conn)
