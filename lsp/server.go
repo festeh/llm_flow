@@ -3,7 +3,10 @@ package lsp
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
+	"time"
 )
 
 // Server represents an LSP server instance
@@ -61,6 +64,21 @@ func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTex
 	// For now, just store the full content
 	if len(params.ContentChanges) > 0 {
 		s.documents[params.TextDocument.URI] = params.ContentChanges[0].Text
+	}
+	return nil
+}
+
+// Predict streams predictions with a delay between each one
+func (s *Server) Predict(ctx context.Context, w io.Writer) error {
+	for i := 0; i < 10; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(300 * time.Millisecond):
+			if _, err := fmt.Fprintln(w, "foo"); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
