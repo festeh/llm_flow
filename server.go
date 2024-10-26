@@ -19,11 +19,11 @@ func (s *BaseServer) CodeLensRefresh(ctx context.Context) error {
     return nil
 }
 
-func (s *BaseServer) Declaration(ctx context.Context, params *protocol.DeclarationParams) (protocol.Declaration, error) {
+func (s *BaseServer) Declaration(ctx context.Context, params *protocol.DeclarationParams) ([]protocol.Location, error) {
     return nil, nil
 }
 
-func (s *BaseServer) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
+func (s *BaseServer) Definition(ctx context.Context, params *protocol.DefinitionParams) ([]protocol.Location, error) {
     return nil, nil
 }
 
@@ -63,7 +63,7 @@ func (s *BaseServer) Hover(ctx context.Context, params *protocol.HoverParams) (*
     return nil, nil
 }
 
-func (s *BaseServer) Implementation(ctx context.Context, params *protocol.ImplementationParams) (protocol.Implementation, error) {
+func (s *BaseServer) Implementation(ctx context.Context, params *protocol.ImplementationParams) ([]protocol.Location, error) {
     return nil, nil
 }
 
@@ -95,7 +95,7 @@ func (s *BaseServer) SignatureHelp(ctx context.Context, params *protocol.Signatu
     return nil, nil
 }
 
-func (s *BaseServer) TypeDefinition(ctx context.Context, params *protocol.TypeDefinitionParams) (protocol.TypeDefinition, error) {
+func (s *BaseServer) TypeDefinition(ctx context.Context, params *protocol.TypeDefinitionParams) ([]protocol.Location, error) {
     return nil, nil
 }
 
