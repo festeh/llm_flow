@@ -5,7 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/festeh/llm_flow/lsp/backend"
+	"github.com/festeh/llm_flow/lsp/provider"
+	"github.com/festeh/llm_flow/lsp/splitter"
 	"io"
 	"log"
 	"net"
@@ -20,19 +21,25 @@ type Server struct {
 	writer    io.Writer
 	mu        sync.Mutex
 	clients   map[net.Conn]struct{}
-	backends  map[string]backend.Backend
+	providers map[string]provider.Provider
 }
 
 // NewServer creates a new LSP server instance
 func NewServer(w io.Writer) *Server {
+	providers := make(map[string]provider.Provider)
+	for _, name := range []string{"codestral", "dummy"} {
+		if provider, err := provider.NewProvider(name); err == nil {
+			log.Printf("Loaded provider: %s", name)
+			providers[name] = provider
+		} else {
+			log.Printf("Failed to load provider: %s", name)
+		}
+	}
 	return &Server{
 		documents: make(map[string]string),
 		writer:    w,
 		clients:   make(map[net.Conn]struct{}),
-		backends: map[string]backend.Backend{
-			"dummy": backend.NewDummyBackend(),
-			"fim":   backend.NewFimBackend(),
-		},
+		providers: providers,
 	}
 }
 
@@ -83,21 +90,20 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "predict":
 		var params struct {
-			Text            string `json:"text"`
-			Backend         string `json:"backend"`
+			Text             string `json:"text"`
 			ProviderAndModel string `json:"providerAndModel"`
 		}
 		if err := json.Unmarshal(header.Params, &params); err != nil {
 			return fmt.Errorf("invalid predict params: %v", err)
 		}
-		if params.Backend == "" {
-			params.Backend = "dummy" // default to dummy backend
+		if params.ProviderAndModel == "" {
+			params.ProviderAndModel = "codestral/codestral-latest"
 		}
 
 		pr, pw := io.Pipe()
 		go func() {
 			defer pw.Close()
-			if err := s.Predict(ctx, pw, params.Text, params.Backend, params.ProviderAndModel); err != nil {
+			if err := s.Predict(ctx, pw, params.Text, params.ProviderAndModel); err != nil {
 				log.Printf("Prediction error: %v", err)
 			}
 			// Send completion notification after prediction is done
@@ -329,13 +335,33 @@ func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTex
 	return nil
 }
 
-// Predict streams predictions using the specified backend
-func (s *Server) Predict(ctx context.Context, w io.Writer, text string, backendName string, providerAndModel string) error {
-	backend, ok := s.backends[backendName]
-	if !ok {
-		return fmt.Errorf("unknown backend: %s", backendName)
+func (s *Server) Predict(ctx context.Context, w io.Writer, text string, providerAndModel string) error {
+	parts := strings.Split(providerAndModel, "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid provider/model format: must be in format provider/model")
 	}
-	return backend.Predict(ctx, w, text, providerAndModel)
+	providerName := parts[0]
+	model := parts[1]
+	provider, ok := s.providers[providerName]
+	if !ok {
+		log.Println("provider not found")
+		log.Printf("available providers: %d", len(s.providers))
+		for k, v := range s.providers {
+			log.Printf("%s: %s", k, v)
+		}
+		return fmt.Errorf("unknown provider: %s", providerName)
+	}
+	splitName := splitter.New(model, nil)
+	var splitFn splitter.SplitFn
+	switch splitName {
+	case splitter.FimNaive:
+		log.Println("FIM naive")
+		splitFn = splitter.GetFimNaiveSplitter(text)
+	default:
+		return fmt.Errorf("unsupported splitter: %d", splitName)
+	}
+  log.Println("Predicting with: ", provider)
+	return Flow(provider, splitFn, ctx, w)
 }
 
 // TextDocumentCompletion handles textDocument/completion request

@@ -1,7 +1,9 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -12,6 +14,8 @@ func NewProvider(name string) (Provider, error) {
 	switch name {
 	case "codestral":
 		return newCodestral()
+	case "dummy":
+		return Dummy{}, nil
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", name)
 	}
@@ -28,4 +32,8 @@ func newCodestral() (*Codestral, error) {
 		return nil, fmt.Errorf("CODESTRAL_API_KEY not found")
 	}
 	return &Codestral{key: key}, nil
+}
+
+func (c *Codestral) Predict(ctx context.Context, w io.Writer, text string, model string) error {
+	return nil
 }
