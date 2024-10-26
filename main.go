@@ -11,11 +11,12 @@ import (
 func main() {
 	ctx := context.Background()
 
-	stream := jsonrpc2.NewStream(jsonrpc2.NewStream(os.Stdin, os.Stdout))
-	conn := jsonrpc2.NewConn(stream)
+	stream := jsonrpc2.NewStream(os.Stdin)
+	conn := jsonrpc2.NewConn(ctx, stream, nil)
 	
 	server := &Server{}
-	protocol.ServerHandler(server, conn, jsonrpc2.MethodNotFound)
+	handler := protocol.ServerHandler(server, conn)
+	handler.Handle(ctx)
 
 	<-conn.Done()
 }
