@@ -11,7 +11,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 )
 
 // Server represents an LSP server instance

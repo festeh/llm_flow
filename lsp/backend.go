@@ -2,7 +2,9 @@ package lsp
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"time"
 )
 
 // Backend defines the interface for prediction backends
