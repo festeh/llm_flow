@@ -9,6 +9,7 @@ import (
 	"net"
 	"strings"
 	"flag"
+	"time"
 )
 
 type jsonrpcMessage struct {
@@ -29,6 +30,10 @@ func main() {
 		log.Fatalf("Failed to connect to server: %v", err)
 	}
 	defer conn.Close()
+
+	startTime := time.Now()
+	var firstResponseTime time.Time
+	var lastResponseTime time.Time
 
 	// Send predict request
 	request := jsonrpcMessage{
@@ -65,8 +70,15 @@ func main() {
 
 		if response.Method == "predict/complete" {
 			fmt.Println("Prediction complete")
+			fmt.Printf("Latency to first response: %v\n", firstResponseTime.Sub(startTime))
+			fmt.Printf("Latency to last response: %v\n", lastResponseTime.Sub(startTime))
 			return
 		} else if response.Method == "predict/response" {
+			if firstResponseTime.IsZero() {
+				firstResponseTime = time.Now()
+			}
+			lastResponseTime = time.Now()
+
 			var predictResponse struct {
 				Content string `json:"content"`
 			}
