@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/festeh/llm_flow/lsp/provider"
 	"github.com/festeh/llm_flow/lsp/splitter"
@@ -60,13 +62,13 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 				Text string `json:"text"`
 			} `json:"choices"`
 		}
+		log.Println(jsonData)
 		if err := json.Unmarshal([]byte(jsonData), &streamResp); err != nil {
 			return fmt.Errorf("error parsing response: %v", err)
 		}
-		if len(streamResp.Choices) > 0 {
-			if _, err := fmt.Fprintln(w, streamResp.Choices[0].Text); err != nil {
-				return fmt.Errorf("error writing response: %v", err)
-			}
+		choice := streamResp.Choices[0].Text
+		if _, err := w.Write([]byte(choice)); err != nil {
+			return fmt.Errorf("error writing response: %v", err)
 		}
 	}
 
