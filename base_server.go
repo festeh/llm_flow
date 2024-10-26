@@ -60,9 +60,12 @@ func (s *BaseServer) FoldingRange(ctx context.Context, params *protocol.FoldingR
 			StartCharacter: 0,
 			EndLine:        10,
 			EndCharacter:   0,
-			Kind:          "region",
+			Kind:           "region",
 		},
 	}, nil
+}
+func (s *BaseServer) FoldingRanges(ctx context.Context, params *protocol.FoldingRangeParams) (result []protocol.FoldingRange, err error) {
+	return nil, nil
 }
 
 func (s *BaseServer) Formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
