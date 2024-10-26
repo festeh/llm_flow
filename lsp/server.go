@@ -83,8 +83,9 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "predict":
 		var params struct {
-			Text    string `json:"text"`
-			Backend string `json:"backend"`
+			Text            string `json:"text"`
+			Backend         string `json:"backend"`
+			ProviderAndModel string `json:"providerAndModel"`
 		}
 		if err := json.Unmarshal(header.Params, &params); err != nil {
 			return fmt.Errorf("invalid predict params: %v", err)
@@ -96,7 +97,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		pr, pw := io.Pipe()
 		go func() {
 			defer pw.Close()
-			if err := s.Predict(ctx, pw, params.Text, params.Backend); err != nil {
+			if err := s.Predict(ctx, pw, params.Text, params.Backend, params.ProviderAndModel); err != nil {
 				log.Printf("Prediction error: %v", err)
 			}
 			// Send completion notification after prediction is done
@@ -329,12 +330,12 @@ func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTex
 }
 
 // Predict streams predictions using the specified backend
-func (s *Server) Predict(ctx context.Context, w io.Writer, text string, backendName string) error {
+func (s *Server) Predict(ctx context.Context, w io.Writer, text string, backendName string, providerAndModel string) error {
 	backend, ok := s.backends[backendName]
 	if !ok {
 		return fmt.Errorf("unknown backend: %s", backendName)
 	}
-	return backend.Predict(ctx, w, text)
+	return backend.Predict(ctx, w, text, providerAndModel)
 }
 
 // TextDocumentCompletion handles textDocument/completion request
