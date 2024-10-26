@@ -22,6 +22,7 @@ type jsonrpcMessage struct {
 func main() {
 	port := flag.Int("port", 7777, "Server port to connect to")
 	input := flag.String("input", "sample text", "Input text for prediction")
+	backend := flag.String("backend", "dummy", "Backend to use for prediction (e.g. dummy)")
 	flag.Parse()
 
 	serverAddr := fmt.Sprintf("localhost:%d", *port)
@@ -40,7 +41,7 @@ func main() {
 		JSONRPC: "2.0",
 		ID:      1,
 		Method:  "predict",
-		Params:  map[string]string{"text": *input},
+		Params:  map[string]string{"text": *input, "backend": *backend},
 	}
 
 	// Marshal and send the request
