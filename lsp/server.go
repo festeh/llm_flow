@@ -130,9 +130,14 @@ func (s *Server) sendResponse(response interface{}) error {
 		return fmt.Errorf("error marshaling response: %v", err)
 	}
 
-	fmt.Fprintf(s.writer, "Content-Length: %d\r\n", len(responseBytes))
-	fmt.Fprintf(s.writer, "\r\n")
-	fmt.Fprintf(s.writer, "%s", responseBytes)
+	header := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(responseBytes))
+	message := append([]byte(header), responseBytes...)
+
+	// Write the complete message atomically
+	if _, err := s.writer.Write(message); err != nil {
+		return fmt.Errorf("error writing response: %v", err)
+	}
+	
 	return nil
 }
 
