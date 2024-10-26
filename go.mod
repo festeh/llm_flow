@@ -1,9 +1,6 @@
 module github.com/festeh/llm_flow
 
 go 1.22.0
-module lsp-server
-
-go 1.21
 
 require go.lsp.dev/protocol v0.12.0
 

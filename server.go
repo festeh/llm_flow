@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"io"
+	"time"
 
 	"go.lsp.dev/protocol"
 )
@@ -55,4 +57,26 @@ func (s *Server) Completion(ctx context.Context, params *protocol.CompletionPara
 			},
 		},
 	}, nil
+}
+
+func (s *Server) Predict(ctx context.Context, writer io.Writer) error {
+	ticker := time.NewTicker(300 * time.Millisecond)
+	defer ticker.Stop()
+
+	count := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if count >= 10 {
+				return nil
+			}
+			_, err := writer.Write([]byte("foo"))
+			if err != nil {
+				return err
+			}
+			count++
+		}
+	}
 }
