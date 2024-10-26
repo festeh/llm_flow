@@ -56,14 +56,17 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 		if !strings.HasPrefix(line, "data: ") {
 			continue
 		}
-		jsonData := strings.TrimPrefix(line, "data: ")
+		content := strings.TrimPrefix(line, "data: ")
+		if content == "[DONE]" {
+			break
+		}
+		log.Println(content)
 		var streamResp struct {
 			Choices []struct {
 				Text string `json:"text"`
 			} `json:"choices"`
 		}
-		log.Println(jsonData)
-		if err := json.Unmarshal([]byte(jsonData), &streamResp); err != nil {
+		if err := json.Unmarshal([]byte(content), &streamResp); err != nil {
 			return fmt.Errorf("error parsing response: %v", err)
 		}
 		choice := streamResp.Choices[0].Text
