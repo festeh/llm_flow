@@ -50,12 +50,17 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+		jsonData := strings.TrimPrefix(line, "data: ")
 		var streamResp struct {
 			Choices []struct {
 				Text string `json:"text"`
 			} `json:"choices"`
 		}
-		if err := json.Unmarshal(scanner.Bytes(), &streamResp); err != nil {
+		if err := json.Unmarshal([]byte(jsonData), &streamResp); err != nil {
 			return fmt.Errorf("error parsing response: %v", err)
 		}
 		if len(streamResp.Choices) > 0 {
