@@ -158,17 +158,30 @@ func (s *Server) Serve(ctx context.Context, addr string) error {
 }
 
 func (s *Server) handleConnection(ctx context.Context, conn net.Conn) {
-	defer conn.Close()
+	defer func() {
+		log.Printf("Client disconnected: %v", conn.RemoteAddr())
+		conn.Close()
+	}()
 
+	log.Printf("New client connected: %v", conn.RemoteAddr())
 	s.writer = conn
 	reader := bufio.NewReader(conn)
 
 	for {
 		message, err := readMessage(reader)
 		if err != nil {
-			if err != io.EOF {
-				log.Printf("Error reading message: %v", err)
+			if err == io.EOF {
+				return
 			}
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				log.Printf("Connection timeout: %v", err)
+				return
+			}
+			if strings.Contains(err.Error(), "connection reset by peer") {
+				log.Printf("Client disconnected unexpectedly: %v", err)
+				return
+			}
+			log.Printf("Error reading message: %v", err)
 			return
 		}
 

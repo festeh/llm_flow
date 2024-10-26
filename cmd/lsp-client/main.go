@@ -51,16 +51,27 @@ func main() {
 
 	fmt.Fprintf(conn, "Content-Length: %d\r\n\r\n%s", len(requestBytes), requestBytes)
 
+	// Set read deadline to prevent hanging
+	conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+
 	// Read and process responses
 	reader := bufio.NewReader(conn)
 	for {
 		message, err := readMessage(reader)
 		if err != nil {
-			if err != io.EOF {
-				log.Printf("Error reading message: %v", err)
+			if err == io.EOF {
+				log.Printf("Server closed connection")
+				return
 			}
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				log.Printf("Connection timeout after 30 seconds")
+				return
+			}
+			log.Printf("Error reading message: %v", err)
 			return
 		}
+		// Reset deadline for next read
+		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 
 		var response jsonrpcMessage
 		if err := json.Unmarshal(message, &response); err != nil {
