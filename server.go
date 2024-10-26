@@ -132,6 +132,117 @@ type Server struct {
     BaseServer
 }
 
+func (s *Server) ColorPresentation(ctx context.Context, params *protocol.ColorPresentationParams) ([]protocol.ColorPresentation, error) {
+    return []protocol.ColorPresentation{
+        {
+            Label: "#FF0000",
+            TextEdit: &protocol.TextEdit{
+                Range: protocol.Range{
+                    Start: protocol.Position{Line: 0, Character: 0},
+                    End:   protocol.Position{Line: 0, Character: 7},
+                },
+                NewText: "#FF0000",
+            },
+        },
+    }, nil
+}
+
+func (s *Server) CompletionResolve(ctx context.Context, params *protocol.CompletionItem) (*protocol.CompletionItem, error) {
+    return params, nil
+}
+
+func (s *Server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
+    return nil
+}
+
+func (s *Server) DidChangeWatchedFiles(ctx context.Context, params *protocol.DidChangeWatchedFilesParams) error {
+    return nil
+}
+
+func (s *Server) DidChangeWorkspaceFolders(ctx context.Context, params *protocol.DidChangeWorkspaceFoldersParams) error {
+    return nil
+}
+
+func (s *Server) DocumentLinkResolve(ctx context.Context, params *protocol.DocumentLink) (*protocol.DocumentLink, error) {
+    return params, nil
+}
+
+func (s *Server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
+    return nil, nil
+}
+
+func (s *Server) ShowDocument(ctx context.Context, params *protocol.ShowDocumentParams) (*protocol.ShowDocumentResult, error) {
+    return &protocol.ShowDocumentResult{Success: true}, nil
+}
+
+func (s *Server) WillCreateFiles(ctx context.Context, params *protocol.CreateFilesParams) (*protocol.WorkspaceEdit, error) {
+    return &protocol.WorkspaceEdit{}, nil
+}
+
+func (s *Server) DidCreateFiles(ctx context.Context, params *protocol.CreateFilesParams) error {
+    return nil
+}
+
+func (s *Server) WillRenameFiles(ctx context.Context, params *protocol.RenameFilesParams) (*protocol.WorkspaceEdit, error) {
+    return &protocol.WorkspaceEdit{}, nil
+}
+
+func (s *Server) DidRenameFiles(ctx context.Context, params *protocol.RenameFilesParams) error {
+    return nil
+}
+
+func (s *Server) WillDeleteFiles(ctx context.Context, params *protocol.DeleteFilesParams) (*protocol.WorkspaceEdit, error) {
+    return &protocol.WorkspaceEdit{}, nil
+}
+
+func (s *Server) DidDeleteFiles(ctx context.Context, params *protocol.DeleteFilesParams) error {
+    return nil
+}
+
+func (s *Server) PrepareCallHierarchy(ctx context.Context, params *protocol.CallHierarchyPrepareParams) ([]protocol.CallHierarchyItem, error) {
+    return []protocol.CallHierarchyItem{}, nil
+}
+
+func (s *Server) IncomingCalls(ctx context.Context, params *protocol.CallHierarchyIncomingCallsParams) ([]protocol.CallHierarchyIncomingCall, error) {
+    return []protocol.CallHierarchyIncomingCall{}, nil
+}
+
+func (s *Server) OutgoingCalls(ctx context.Context, params *protocol.CallHierarchyOutgoingCallsParams) ([]protocol.CallHierarchyOutgoingCall, error) {
+    return []protocol.CallHierarchyOutgoingCall{}, nil
+}
+
+func (s *Server) SemanticTokensFull(ctx context.Context, params *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
+    return &protocol.SemanticTokens{}, nil
+}
+
+func (s *Server) SemanticTokensFullDelta(ctx context.Context, params *protocol.SemanticTokensDeltaParams) (interface{}, error) {
+    return &protocol.SemanticTokens{}, nil
+}
+
+func (s *Server) SemanticTokensRange(ctx context.Context, params *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
+    return &protocol.SemanticTokens{}, nil
+}
+
+func (s *Server) SemanticTokensRefresh(ctx context.Context) error {
+    return nil
+}
+
+func (s *Server) LinkedEditingRange(ctx context.Context, params *protocol.LinkedEditingRangeParams) (*protocol.LinkedEditingRanges, error) {
+    return &protocol.LinkedEditingRanges{}, nil
+}
+
+func (s *Server) Moniker(ctx context.Context, params *protocol.MonikerParams) ([]protocol.Moniker, error) {
+    return []protocol.Moniker{}, nil
+}
+
+func (s *Server) Request(ctx context.Context, method string, params interface{}) (interface{}, error) {
+    return nil, nil
+}
+
+func (s *Server) Symbols(ctx context.Context, params *protocol.WorkspaceSymbolParams) ([]protocol.SymbolInformation, error) {
+    return []protocol.SymbolInformation{}, nil
+}
+
 func (s *Server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
