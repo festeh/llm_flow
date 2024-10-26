@@ -10,8 +10,9 @@ import (
 	"github.com/festeh/llm_flow/lsp/splitter"
 )
 
-type Dummy struct {
-}
+type Dummy struct{}
+
+var _ Provider = Dummy{} // Verify Dummy implements Provider interface
 
 func (b *Dummy) Predict(ctx context.Context, w io.Writer, splitter splitter.SplitFn) error {
 	data := make(map[string]string)

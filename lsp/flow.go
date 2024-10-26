@@ -11,7 +11,7 @@ import (
 
 func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w io.Writer) error {
 	// check for DummyProvider
-	if provider, ok := p.(*provider.Dummy); ok {
+	if provider, ok := p.(provider.Dummy); ok {
 		log.Println("Flow: dummy")
 		return provider.Predict(ctx, w, splitter)
 	}

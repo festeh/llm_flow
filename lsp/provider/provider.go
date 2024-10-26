@@ -8,6 +8,7 @@ import (
 )
 
 type Provider interface {
+	Predict(ctx context.Context, w io.Writer, splitter splitter.SplitFn) error
 }
 
 func NewProvider(name string) (Provider, error) {
