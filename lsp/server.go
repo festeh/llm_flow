@@ -73,7 +73,6 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "exit":
 		handleErr = s.Exit(ctx)
-		os.Exit(0)
 
 	case "textDocument/didOpen":
 		var params DidOpenTextDocumentParams
