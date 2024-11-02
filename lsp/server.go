@@ -84,6 +84,11 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		json.Unmarshal(header.Params, &params)
 		handleErr = s.TextDocumentDidChange(ctx, &params)
 
+	case "textDocument/didSave":
+		var params DidSaveTextDocumentParams
+		json.Unmarshal(header.Params, &params)
+		handleErr = s.TextDocumentDidSave(ctx, &params)
+
 	case "textDocument/completion":
 		result, handleErr = s.TextDocumentCompletion(ctx, header.Params)
 
@@ -331,6 +336,12 @@ func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTex
 	if len(params.ContentChanges) > 0 {
 		s.documents[params.TextDocument.URI] = params.ContentChanges[0].Text
 	}
+	return nil
+}
+
+// TextDocumentDidSave handles textDocument/didSave notification
+func (s *Server) TextDocumentDidSave(ctx context.Context, params *DidSaveTextDocumentParams) error {
+	log.Printf("Document saved: %s", params.TextDocument.URI)
 	return nil
 }
 
