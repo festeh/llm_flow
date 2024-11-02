@@ -10,7 +10,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 	"strings"
 	"sync"
 )
@@ -324,14 +323,14 @@ func (s *Server) Exit(ctx context.Context) error {
 
 // TextDocumentDidOpen handles textDocument/didOpen notification
 func (s *Server) TextDocumentDidOpen(ctx context.Context, params *DidOpenTextDocumentParams) error {
-	log.Printf("Document opened: %s", params.TextDocument.URI)
+	log.Printf("Document opened: %+v", params)
 	s.documents[params.TextDocument.URI] = params.TextDocument.Text
 	return nil
 }
 
 // TextDocumentDidChange handles textDocument/didChange notification
 func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTextDocumentParams) error {
-	log.Printf("Document changed: %s", params.TextDocument.URI)
+	log.Printf("Document changed: %+v", params)
 	// For now, just store the full content
 	if len(params.ContentChanges) > 0 {
 		s.documents[params.TextDocument.URI] = params.ContentChanges[0].Text
@@ -341,7 +340,6 @@ func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTex
 
 // TextDocumentDidSave handles textDocument/didSave notification
 func (s *Server) TextDocumentDidSave(ctx context.Context, params *DidSaveTextDocumentParams) error {
-	log.Printf("Document saved: %s", params.TextDocument.URI)
 	return nil
 }
 
@@ -370,7 +368,7 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 	default:
 		return fmt.Errorf("unsupported splitter: %d", splitName)
 	}
-  log.Println("Predicting with: ", provider)
+	log.Println("Predicting with: ", provider)
 	return Flow(provider, splitFn, ctx, w)
 }
 
