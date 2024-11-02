@@ -374,6 +374,10 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 	return Flow(provider, splitFn, ctx, w)
 }
 
+type DidSaveTextDocumentParams struct {
+	TextDocument TextDocumentItem `json:"textDocument"`
+}
+
 // TextDocumentCompletion handles textDocument/completion request
 func (s *Server) TextDocumentCompletion(ctx context.Context, params json.RawMessage) (*CompletionList, error) {
 	// Dummy implementation returning some static completion items
