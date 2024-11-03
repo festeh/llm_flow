@@ -105,17 +105,11 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		result, handleErr = s.TextDocumentCompletion(ctx, header.Params)
 
 	case "cancel_predict_editor":
-		var params struct {
-			ID interface{} `json:"id"`
-		}
-		if err := json.Unmarshal(header.Params, &params); err != nil {
-			return fmt.Errorf("invalid cancel params: %v", err)
-		}
 		s.predictionsMu.Lock()
-		if cancel, exists := s.activePredictions[params.ID]; exists {
+		for id, cancel := range s.activePredictions {
 			cancel()
-			delete(s.activePredictions, params.ID)
-			log.Printf("Cancelled prediction %v", params.ID)
+			delete(s.activePredictions, id)
+			log.Printf("Cancelled prediction %v", id)
 		}
 		s.predictionsMu.Unlock()
 		return nil
