@@ -26,8 +26,14 @@ type InitializeParams struct {
 	RootURI   string `json:"rootUri"`
 }
 
+type ServerInfo struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
 // InitializeResult represents result of initialize request
 type InitializeResult struct {
+	Info         ServerInfo         `json:"serverInfo"`
 	Capabilities ServerCapabilities `json:"capabilities"`
 }
 

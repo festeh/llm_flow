@@ -96,6 +96,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "textDocument/didSave":
 		var params DidSaveTextDocumentParams
+		log.Info("", "rawParams", string(header.Params))
 		json.Unmarshal(header.Params, &params)
 		handleErr = s.TextDocumentDidSave(ctx, &params)
 
@@ -223,6 +224,8 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		} else {
 			response["result"] = result
 		}
+		marsh, _ := json.Marshal(response)
+		log.Info("Sending", "resp", string(marsh))
 		s.sendResponse(response)
 	}
 
@@ -371,9 +374,13 @@ func (s *Server) Initialize(ctx context.Context, params *InitializeParams) (*Ini
 	log.Printf("Initialize request received. Root URI: %s", params.RootURI)
 
 	return &InitializeResult{
+		Info: ServerInfo{
+			Name:    "llm_flow",
+			Version: "0.0.1",
+		},
 		Capabilities: ServerCapabilities{
-			TextDocumentSync:   1, // Incremental sync
-			CompletionProvider: true,
+			TextDocumentSync:   1,
+			CompletionProvider: false,
 		},
 	}, nil
 }
@@ -406,6 +413,7 @@ func (s *Server) TextDocumentDidOpen(ctx context.Context, params *DidOpenTextDoc
 // TextDocumentDidChange handles textDocument/didChange notification
 func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTextDocumentParams) error {
 	log.Info("Changed:", "uri", params.TextDocument.URI)
+	log.Info(params.ContentChanges[0].Text)
 	// For now, just store the full content
 	if len(params.ContentChanges) > 0 {
 		s.documents[params.TextDocument.URI] = params.ContentChanges[0].Text
@@ -415,6 +423,9 @@ func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTex
 
 // TextDocumentDidSave handles textDocument/didSave notification
 func (s *Server) TextDocumentDidSave(ctx context.Context, params *DidSaveTextDocumentParams) error {
+	log.Info("Saved:", "uri", params.TextDocument.URI)
+	// For now, just store the full content
+	s.documents[params.TextDocument.URI] = params.TextDocument.Text
 	return nil
 }
 
