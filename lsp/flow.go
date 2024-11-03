@@ -35,7 +35,11 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 
 	fmt.Println(string(jsonBody))
 
-	req, err := http.NewRequestWithContext(ctx, "POST", p.Endpoint(), bytes.NewBuffer(jsonBody))
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	default:
+		req, err := http.NewRequestWithContext(ctx, "POST", p.Endpoint(), bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("error creating request: %v", err)
 	}
@@ -54,6 +58,10 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		default:
 		line := scanner.Text()
 		if !strings.HasPrefix(line, "data: ") {
 			continue
