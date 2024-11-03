@@ -379,7 +379,7 @@ func (s *Server) Initialize(ctx context.Context, params *InitializeParams) (*Ini
 			Version: "0.0.1",
 		},
 		Capabilities: ServerCapabilities{
-			TextDocumentSync:   1,
+			TextDocumentSync:   2, // Full document sync
 			CompletionProvider: false,
 		},
 	}, nil
