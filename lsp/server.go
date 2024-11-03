@@ -437,7 +437,39 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 	switch splitName {
 	case splitter.FimNaive:
 		log.Println("FIM naive")
-		splitFn = splitter.GetFimNaiveSplitter("boom")
+		// Get document content
+		doc, exists := s.documents[params.URI]
+		if !exists {
+			return fmt.Errorf("document not found: %s", params.URI)
+		}
+
+		// Split document into lines
+		lines := strings.Split(doc, "\n")
+		if params.Line >= len(lines) {
+			return fmt.Errorf("line number out of range: %d", params.Line)
+		}
+
+		// Get the current line
+		currentLine := lines[params.Line]
+		if params.Pos > len(currentLine) {
+			return fmt.Errorf("position out of range: %d", params.Pos)
+		}
+
+		// Split text at cursor position
+		prefix := strings.Join(lines[:params.Line], "\n")
+		if params.Line > 0 {
+			prefix += "\n"
+		}
+		prefix += currentLine[:params.Pos]
+		
+		suffix := currentLine[params.Pos:]
+		if params.Line < len(lines)-1 {
+			suffix += "\n" + strings.Join(lines[params.Line+1:], "\n")
+		}
+
+		// Combine with FIM token
+		text := prefix + constants.FIM_TOKEN + suffix
+		splitFn = splitter.GetFimNaiveSplitter(text)
 	default:
 		return fmt.Errorf("unsupported splitter: %d", splitName)
 	}
