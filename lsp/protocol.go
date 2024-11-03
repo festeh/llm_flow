@@ -33,7 +33,7 @@ type InitializeResult struct {
 
 // ServerCapabilities represents server capabilities
 type ServerCapabilities struct {
-	TextDocumentSync    int  `json:"textDocumentSync"`
+	TextDocumentSync   int  `json:"textDocumentSync"`
 	CompletionProvider bool `json:"completionProvider"`
 }
 
@@ -44,8 +44,8 @@ type DidOpenTextDocumentParams struct {
 
 // TextDocumentContentChangeEvent represents a change to a text document
 type TextDocumentContentChangeEvent struct {
-	Range       Range  `json:"range"`
-	Text        string `json:"text"`
+	Range Range  `json:"range"`
+	Text  string `json:"text"`
 }
 
 // DidChangeTextDocumentParams params for textDocument/didChange
@@ -74,5 +74,6 @@ type PredictParams struct {
 
 // PredictResponse represents a single prediction response
 type PredictResponse struct {
-	Content string `json:"content"`
+	ID      interface{} `json:"id"`
+	Content string      `json:"content"`
 }

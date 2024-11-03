@@ -73,15 +73,15 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 			return "", fmt.Errorf("error parsing response: %v", err)
 		}
 		choice := streamResp.Choices[0].Delta.Content
-		log.Println("Choice", choice)
 		buffer.WriteString(choice)
 		if _, err = fmt.Fprint(w, choice); err != nil {
 			return "", fmt.Errorf("error writing response: %v", err)
 		}
 	}
-
 	if err := scanner.Err(); err != nil {
 		return "", err
 	}
-	return buffer.String(), nil
+	res := buffer.String()
+	log.Println("Result", res)
+	return res, nil
 }

@@ -66,6 +66,8 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 	var result interface{}
 	var handleErr error
 
+	log.Println("Got method", header.Method)
+
 	switch header.Method {
 	case "initialize":
 		var params InitializeParams
@@ -101,7 +103,6 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "predict_editor":
 		var params PredictEditorParams
-		log.Printf("Got predict_editor request %+v", header.Params)
 		if err := json.Unmarshal(header.Params, &params); err != nil {
 			return fmt.Errorf("invalid predict params: %v", err)
 		}
@@ -122,9 +123,9 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 				"jsonrpc": "2.0",
 				"id":      header.ID,
 				"result": PredictResponse{
+					ID:      header.ID,
 					Content: content,
 				},
-				// "method":  "predict/complete",
 			}
 			log.Println("predict_editor complete")
 			s.sendResponse(response)
@@ -132,14 +133,14 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 		scanner := bufio.NewScanner(pr)
 		for scanner.Scan() {
-			response := map[string]interface{}{
-				"jsonrpc": "2.0",
-				"method":  "predict/response",
-				"params": PredictResponse{
-					Content: scanner.Text(),
-				},
-			}
-			s.sendResponse(response)
+			// _ := map[string]interface{}{
+			// 	"jsonrpc": "2.0",
+			// 	"method":  "predict/response",
+			// 	"params": PredictResponse{
+			// 		Content: scanner.Text(),
+			// 	},
+			// }
+			// s.sendResponse(response)
 		}
 		return nil
 
@@ -415,13 +416,11 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 	var splitFn splitter.SplitFn
 	switch splitName {
 	case splitter.FimNaive:
-		log.Println("FIM naive")
 		splitFn = splitter.GetFimNaiveSplitter(text)
 	default:
 		return fmt.Errorf("unsupported splitter: %d", splitName)
 	}
-	log.Println("Predicting with: ", provider)
-  _, err := Flow(provider, splitFn, ctx, w)
+	_, err := Flow(provider, splitFn, ctx, w)
 	return err
 }
 
@@ -445,7 +444,6 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 	var splitFn splitter.SplitFn
 	switch splitName {
 	case splitter.FimNaive:
-		log.Println("FIM naive")
 		// Get document content
 		doc, exists := s.documents[params.URI]
 		if !exists {
@@ -458,19 +456,21 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 			return "", fmt.Errorf("line number out of range: %d", params.Line)
 		}
 
-		// Get the current line
 		currentLine := lines[params.Line]
-		if params.Pos > len(currentLine) {
-			return "", fmt.Errorf("position out of range: %d", params.Pos)
-		}
-
-		// Split text at cursor position
 		prefix := strings.Join(lines[:params.Line], "\n")
 		if params.Line > 0 {
 			prefix += "\n"
 		}
-		prefix += currentLine[:params.Pos]
-		suffix := currentLine[params.Pos:]
+
+		pos := params.Pos
+		suffix := ""
+		if pos >= len(currentLine) {
+			prefix += currentLine
+		} else {
+			prefix += currentLine[:pos]
+			suffix = currentLine[pos:]
+		}
+
 		if params.Line < len(lines)-1 {
 			suffix += "\n" + strings.Join(lines[params.Line+1:], "\n")
 		}
@@ -481,7 +481,6 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 	default:
 		return "", fmt.Errorf("unsupported splitter: %d", splitName)
 	}
-	log.Println("Predicting with: ", provider)
 	return Flow(provider, splitFn, ctx, w)
 }
 
