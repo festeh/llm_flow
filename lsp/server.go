@@ -17,11 +17,13 @@ import (
 
 // Server represents an LSP server instance
 type Server struct {
-	documents map[string]string
-	writer    io.Writer
-	mu        sync.Mutex
-	clients   map[net.Conn]struct{}
-	providers map[string]provider.Provider
+	documents         map[string]string
+	writer           io.Writer
+	mu               sync.Mutex
+	clients          map[net.Conn]struct{}
+	providers        map[string]provider.Provider
+	activePredictions map[interface{}]context.CancelFunc
+	predictionsMu     sync.Mutex
 }
 
 // NewServer creates a new LSP server instance
@@ -36,10 +38,11 @@ func NewServer(w io.Writer) *Server {
 		}
 	}
 	return &Server{
-		documents: make(map[string]string),
-		writer:    w,
-		clients:   make(map[net.Conn]struct{}),
-		providers: providers,
+		documents:         make(map[string]string),
+		writer:           w,
+		clients:          make(map[net.Conn]struct{}),
+		providers:        providers,
+		activePredictions: make(map[interface{}]context.CancelFunc),
 	}
 }
 
@@ -101,6 +104,22 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 	case "textDocument/completion":
 		result, handleErr = s.TextDocumentCompletion(ctx, header.Params)
 
+	case "cancel_predict_editor":
+		var params struct {
+			ID interface{} `json:"id"`
+		}
+		if err := json.Unmarshal(header.Params, &params); err != nil {
+			return fmt.Errorf("invalid cancel params: %v", err)
+		}
+		s.predictionsMu.Lock()
+		if cancel, exists := s.activePredictions[params.ID]; exists {
+			cancel()
+			delete(s.activePredictions, params.ID)
+			log.Printf("Cancelled prediction %v", params.ID)
+		}
+		s.predictionsMu.Unlock()
+		return nil
+
 	case "predict_editor":
 		var params PredictEditorParams
 		if err := json.Unmarshal(header.Params, &params); err != nil {
@@ -110,10 +129,22 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		if params.ProviderAndModel == "" {
 			params.ProviderAndModel = "codestral/codestral-latest"
 		}
+
+		// Create cancellable context
+		predCtx, cancel := context.WithCancel(ctx)
+		s.predictionsMu.Lock()
+		s.activePredictions[header.ID] = cancel
+		s.predictionsMu.Unlock()
+
 		pr, pw := io.Pipe()
 		go func() {
 			defer pw.Close()
-			content, err := s.PredictEditor(ctx, pw, params)
+			content, err := s.PredictEditor(predCtx, pw, params)
+			
+			// Clean up prediction tracking
+			s.predictionsMu.Lock()
+			delete(s.activePredictions, header.ID)
+			s.predictionsMu.Unlock()
 			if err != nil {
 				log.Printf("Prediction error: %v", err)
 				return
