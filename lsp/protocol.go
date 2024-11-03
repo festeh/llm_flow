@@ -37,10 +37,22 @@ type InitializeResult struct {
 	Capabilities ServerCapabilities `json:"capabilities"`
 }
 
+// TextDocumentSyncOptions represents synchronization options
+type TextDocumentSyncOptions struct {
+	OpenClose bool        `json:"openClose"`
+	Change    int         `json:"change"`
+	Save      SaveOptions `json:"save"`
+}
+
+// SaveOptions represents options for document save
+type SaveOptions struct {
+	IncludeText bool `json:"includeText"`
+}
+
 // ServerCapabilities represents server capabilities
 type ServerCapabilities struct {
-	TextDocumentSync   int  `json:"textDocumentSync"`
-	CompletionProvider bool `json:"completionProvider"`
+	TextDocumentSync   TextDocumentSyncOptions `json:"textDocumentSync"`
+	CompletionProvider bool                    `json:"completionProvider"`
 }
 
 // DidOpenTextDocumentParams params for textDocument/didOpen
