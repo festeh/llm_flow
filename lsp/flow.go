@@ -72,7 +72,7 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 		}
 		choice := streamResp.Choices[0].Delta.Content
 		log.Println("Choice", choice)
-		_, err = fmt.Println(choice)
+		_, err = fmt.Fprint(w, choice)
 		if err != nil {
 			return fmt.Errorf("error writing response: %v", err)
 		}

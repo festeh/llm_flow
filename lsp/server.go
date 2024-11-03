@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/festeh/llm_flow/lsp/constants"
 	"github.com/festeh/llm_flow/lsp/provider"
 	"github.com/festeh/llm_flow/lsp/splitter"
 	"io"
@@ -117,8 +118,10 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 			// Send completion notification after prediction is done
 			response := map[string]interface{}{
 				"jsonrpc": "2.0",
-				"method":  "predict/complete",
+				"id":      header.ID,
+				// "method":  "predict/complete",
 			}
+			log.Println("predict_editor complete")
 			s.sendResponse(response)
 		}()
 
@@ -132,6 +135,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 				},
 			}
 			s.sendResponse(response)
+			log.Println("588")
 		}
 		return nil
 
@@ -461,7 +465,6 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 			prefix += "\n"
 		}
 		prefix += currentLine[:params.Pos]
-		
 		suffix := currentLine[params.Pos:]
 		if params.Line < len(lines)-1 {
 			suffix += "\n" + strings.Join(lines[params.Line+1:], "\n")
