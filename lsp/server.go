@@ -42,6 +42,13 @@ func NewServer(w io.Writer) *Server {
 	}
 }
 
+type PredictEditorParams struct {
+	ProviderAndModel string `json:"providerAndModel"`
+	URI              string `json:"uri"`
+	Line             int    `json:"line"`
+	Pos              int    `json:"pos"`
+}
+
 // HandleMessage processes a single LSP message
 func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 	// Parse the JSON-RPC message
@@ -90,6 +97,43 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "textDocument/completion":
 		result, handleErr = s.TextDocumentCompletion(ctx, header.Params)
+
+	case "predict_editor":
+		var params PredictEditorParams
+		log.Printf("Got predict_editor request %+v", header.Params)
+		if err := json.Unmarshal(header.Params, &params); err != nil {
+			return fmt.Errorf("invalid predict params: %v", err)
+		}
+		log.Printf("Got params %+v", params)
+		if params.ProviderAndModel == "" {
+			params.ProviderAndModel = "codestral/codestral-latest"
+		}
+		pr, pw := io.Pipe()
+		go func() {
+			defer pw.Close()
+			if err := s.PredictEditor(ctx, pw, params); err != nil {
+				log.Printf("Prediction error: %v", err)
+			}
+			// Send completion notification after prediction is done
+			response := map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "predict/complete",
+			}
+			s.sendResponse(response)
+		}()
+
+		scanner := bufio.NewScanner(pr)
+		for scanner.Scan() {
+			response := map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "predict/response",
+				"params": PredictResponse{
+					Content: scanner.Text(),
+				},
+			}
+			s.sendResponse(response)
+		}
+		return nil
 
 	case "predict":
 		var params struct {
@@ -370,6 +414,36 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 	}
 	log.Println("Predicting with: ", provider)
 	return Flow(provider, splitFn, ctx, w)
+}
+
+func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictEditorParams) error {
+	parts := strings.Split(params.ProviderAndModel, "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid provider/model format: must be in format provider/model")
+	}
+	providerName := parts[0]
+	model := parts[1]
+	provider, ok := s.providers[providerName]
+	if !ok {
+		log.Println("provider not found")
+		log.Printf("available providers: %d", len(s.providers))
+		for k, v := range s.providers {
+			log.Printf("%s: %s", k, v)
+		}
+		return fmt.Errorf("unknown provider: %s", providerName)
+	}
+	splitName := splitter.New(model, nil)
+	var splitFn splitter.SplitFn
+	switch splitName {
+	case splitter.FimNaive:
+		log.Println("FIM naive")
+		splitFn = splitter.GetFimNaiveSplitter("boom")
+	default:
+		return fmt.Errorf("unsupported splitter: %d", splitName)
+	}
+	log.Println("Predicting with: ", provider)
+	return Flow(provider, splitFn, ctx, w)
+	return nil
 }
 
 type DidSaveTextDocumentParams struct {
