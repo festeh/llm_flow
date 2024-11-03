@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/charmbracelet/log"
 	"github.com/festeh/llm_flow/lsp/constants"
 	"github.com/festeh/llm_flow/lsp/provider"
 	"github.com/festeh/llm_flow/lsp/splitter"
 	"io"
-	"log"
 	"net"
 	"strings"
 	"sync"
@@ -18,10 +18,10 @@ import (
 // Server represents an LSP server instance
 type Server struct {
 	documents         map[string]string
-	writer           io.Writer
-	mu               sync.Mutex
-	clients          map[net.Conn]struct{}
-	providers        map[string]provider.Provider
+	writer            io.Writer
+	mu                sync.Mutex
+	clients           map[net.Conn]struct{}
+	providers         map[string]provider.Provider
 	activePredictions map[interface{}]context.CancelFunc
 	predictionsMu     sync.Mutex
 }
@@ -31,17 +31,17 @@ func NewServer(w io.Writer) *Server {
 	providers := make(map[string]provider.Provider)
 	for _, name := range []string{"codestral", "dummy"} {
 		if provider, err := provider.NewProvider(name); err == nil {
-			log.Printf("Loaded provider: %s", name)
+			log.Info("Loaded", "provider", name)
 			providers[name] = provider
 		} else {
-			log.Printf("Failed to load provider: %s", name)
+			log.Error("Failed to load provider: %s", name)
 		}
 	}
 	return &Server{
 		documents:         make(map[string]string),
-		writer:           w,
-		clients:          make(map[net.Conn]struct{}),
-		providers:        providers,
+		writer:            w,
+		clients:           make(map[net.Conn]struct{}),
+		providers:         providers,
 		activePredictions: make(map[interface{}]context.CancelFunc),
 	}
 }
@@ -68,8 +68,6 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 	// Handle different methods
 	var result interface{}
 	var handleErr error
-
-	log.Println("Got method", header.Method)
 
 	switch header.Method {
 	case "initialize":
@@ -109,7 +107,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		for id, cancel := range s.activePredictions {
 			cancel()
 			delete(s.activePredictions, id)
-			log.Printf("Cancelled prediction %v", id)
+			log.Info("Cancelled prediction %v", id)
 		}
 		s.predictionsMu.Unlock()
 		return nil
@@ -119,7 +117,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		if err := json.Unmarshal(header.Params, &params); err != nil {
 			return fmt.Errorf("invalid predict params: %v", err)
 		}
-		log.Printf("Got params %+v", params)
+		log.Debug("Got", "params", params)
 		if params.ProviderAndModel == "" {
 			params.ProviderAndModel = "codestral/codestral-latest"
 		}
@@ -134,13 +132,13 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		go func() {
 			defer pw.Close()
 			content, err := s.PredictEditor(predCtx, pw, params)
-			
+
 			// Clean up prediction tracking
 			s.predictionsMu.Lock()
 			delete(s.activePredictions, header.ID)
 			s.predictionsMu.Unlock()
 			if err != nil {
-				log.Printf("Prediction error: %v", err)
+				log.Error("Prediction", "error", err)
 				return
 			}
 			// Send completion notification after prediction is done
@@ -152,7 +150,6 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 					Content: content,
 				},
 			}
-			log.Println("predict_editor complete")
 			s.sendResponse(response)
 		}()
 
@@ -257,7 +254,7 @@ func (s *Server) Serve(ctx context.Context, addr string) error {
 	}
 	defer listener.Close()
 
-	log.Printf("LSP server listening on %s", addr)
+	log.Info("LSP server listening on", "port", addr)
 
 	for {
 		conn, err := listener.Accept()
@@ -383,32 +380,32 @@ func (s *Server) Initialize(ctx context.Context, params *InitializeParams) (*Ini
 
 // Initialized handles the LSP initialized notification
 func (s *Server) Initialized(ctx context.Context) error {
-	log.Println("Server initialized")
+	log.Info("Server initialized")
 	return nil
 }
 
 // Shutdown handles the LSP shutdown request
 func (s *Server) Shutdown(ctx context.Context) error {
-	log.Println("Shutdown request received")
+	log.Info("Shutdown request received")
 	return nil
 }
 
 // Exit handles the LSP exit notification
 func (s *Server) Exit(ctx context.Context) error {
-	log.Println("Exit notification received")
+	log.Info("Exit notification received")
 	return nil
 }
 
 // TextDocumentDidOpen handles textDocument/didOpen notification
 func (s *Server) TextDocumentDidOpen(ctx context.Context, params *DidOpenTextDocumentParams) error {
-	log.Printf("Document opened: %+v", params)
+	log.Info("Opened:", "uri", params.TextDocument.URI)
 	s.documents[params.TextDocument.URI] = params.TextDocument.Text
 	return nil
 }
 
 // TextDocumentDidChange handles textDocument/didChange notification
 func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTextDocumentParams) error {
-	log.Printf("Document changed: %+v", params)
+	log.Info("Changed:", "uri", params.TextDocument.URI)
 	// For now, just store the full content
 	if len(params.ContentChanges) > 0 {
 		s.documents[params.TextDocument.URI] = params.ContentChanges[0].Text
@@ -430,10 +427,10 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 	model := parts[1]
 	provider, ok := s.providers[providerName]
 	if !ok {
-		log.Println("provider not found")
-		log.Printf("available providers: %d", len(s.providers))
+		log.Error("provider not found")
+		log.Error("available providers: ")
 		for k, v := range s.providers {
-			log.Printf("%s: %s", k, v)
+			log.Error("%s: %s", k, v)
 		}
 		return fmt.Errorf("unknown provider: %s", providerName)
 	}
@@ -458,10 +455,9 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 	model := parts[1]
 	provider, ok := s.providers[providerName]
 	if !ok {
-		log.Println("provider not found")
-		log.Printf("available providers: %d", len(s.providers))
+		log.Error("provider not found")
 		for k, v := range s.providers {
-			log.Printf("%s: %s", k, v)
+			log.Error("%s: %s", k, v)
 		}
 		return "", fmt.Errorf("unknown provider: %s", providerName)
 	}

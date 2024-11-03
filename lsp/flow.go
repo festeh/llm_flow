@@ -6,8 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/charmbracelet/log"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -33,8 +33,6 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 		return "", fmt.Errorf("error marshaling request: %v", err)
 	}
 
-	fmt.Println(string(jsonBody))
-
 	req, err := http.NewRequestWithContext(ctx, "POST", p.Endpoint(), bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("error creating request: %v", err)
@@ -46,7 +44,6 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	log.Println(resp)
 	if err != nil {
 		return "", fmt.Errorf("error making request: %v", err)
 	}
@@ -56,7 +53,7 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
-			log.Println("Cancelled")
+			log.Info("Cancelled")
 			return "", ctx.Err()
 		default:
 			line := scanner.Text()
@@ -88,6 +85,6 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 		}
 	}
 	res := buffer.String()
-	log.Println("Result", res)
+	log.Debug("Done", "result", res)
 	return res, nil
 }

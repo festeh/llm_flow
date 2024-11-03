@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 
+	"github.com/charmbracelet/log"
 	"github.com/festeh/llm_flow/lsp"
 )
-
 
 func main() {
 	// Set up logging to a file
@@ -22,6 +21,6 @@ func main() {
 	server := lsp.NewServer(os.Stdout)
 
 	if err := server.Serve(ctx, ":7777"); err != nil {
-		log.Fatalf("Server error: %v", err)
+		log.Error("Server error: %v", err)
 	}
 }
