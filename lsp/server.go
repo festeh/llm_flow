@@ -112,13 +112,18 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		pr, pw := io.Pipe()
 		go func() {
 			defer pw.Close()
-			if err := s.PredictEditor(ctx, pw, params); err != nil {
+			content, err := s.PredictEditor(ctx, pw, params)
+			if err != nil {
 				log.Printf("Prediction error: %v", err)
+				return
 			}
 			// Send completion notification after prediction is done
 			response := map[string]interface{}{
 				"jsonrpc": "2.0",
 				"id":      header.ID,
+				"result": PredictResponse{
+					Content: content,
+				},
 				// "method":  "predict/complete",
 			}
 			log.Println("predict_editor complete")
@@ -135,7 +140,6 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 				},
 			}
 			s.sendResponse(response)
-			log.Println("588")
 		}
 		return nil
 
@@ -417,13 +421,14 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 		return fmt.Errorf("unsupported splitter: %d", splitName)
 	}
 	log.Println("Predicting with: ", provider)
-	return Flow(provider, splitFn, ctx, w)
+  _, err := Flow(provider, splitFn, ctx, w)
+	return err
 }
 
-func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictEditorParams) error {
+func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictEditorParams) (string, error) {
 	parts := strings.Split(params.ProviderAndModel, "/")
 	if len(parts) != 2 {
-		return fmt.Errorf("invalid provider/model format: must be in format provider/model")
+		return "", fmt.Errorf("invalid provider/model format: must be in format provider/model")
 	}
 	providerName := parts[0]
 	model := parts[1]
@@ -434,7 +439,7 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 		for k, v := range s.providers {
 			log.Printf("%s: %s", k, v)
 		}
-		return fmt.Errorf("unknown provider: %s", providerName)
+		return "", fmt.Errorf("unknown provider: %s", providerName)
 	}
 	splitName := splitter.New(model, nil)
 	var splitFn splitter.SplitFn
@@ -444,19 +449,19 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 		// Get document content
 		doc, exists := s.documents[params.URI]
 		if !exists {
-			return fmt.Errorf("document not found: %s", params.URI)
+			return "", fmt.Errorf("document not found: %s", params.URI)
 		}
 
 		// Split document into lines
 		lines := strings.Split(doc, "\n")
 		if params.Line >= len(lines) {
-			return fmt.Errorf("line number out of range: %d", params.Line)
+			return "", fmt.Errorf("line number out of range: %d", params.Line)
 		}
 
 		// Get the current line
 		currentLine := lines[params.Line]
 		if params.Pos > len(currentLine) {
-			return fmt.Errorf("position out of range: %d", params.Pos)
+			return "", fmt.Errorf("position out of range: %d", params.Pos)
 		}
 
 		// Split text at cursor position
@@ -474,7 +479,7 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 		text := prefix + constants.FIM_TOKEN + suffix
 		splitFn = splitter.GetFimNaiveSplitter(text)
 	default:
-		return fmt.Errorf("unsupported splitter: %d", splitName)
+		return "", fmt.Errorf("unsupported splitter: %d", splitName)
 	}
 	log.Println("Predicting with: ", provider)
 	return Flow(provider, splitFn, ctx, w)

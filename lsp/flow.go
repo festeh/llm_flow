@@ -17,12 +17,12 @@ import (
 
 func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w io.Writer) (string, error) {
 
-	var buffer strings.Builder
 	if p, ok := p.(*provider.Dummy); ok {
 		err := p.Predict(ctx, w, splitter)
-		return buffer.String(), err
+		return "dummy result", err
 	}
 
+	var buffer strings.Builder
 	reqBody, err := p.GetRequestBody(splitter)
 	if err != nil {
 		return "", fmt.Errorf("error getting request body: %v", err)
