@@ -96,7 +96,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "textDocument/didSave":
 		var params DidSaveTextDocumentParams
-		log.Info("", "rawParams", string(header.Params))
+		// log.Info("", "rawParams", string(header.Params))
 		json.Unmarshal(header.Params, &params)
 		handleErr = s.TextDocumentDidSave(ctx, &params)
 
@@ -381,7 +381,7 @@ func (s *Server) Initialize(ctx context.Context, params *InitializeParams) (*Ini
 		Capabilities: ServerCapabilities{
 			TextDocumentSync: TextDocumentSyncOptions{
 				OpenClose: true,
-				Change:   2, // Full document sync
+				Change:    1, // Full document sync
 				Save: SaveOptions{
 					IncludeText: true,
 				},
@@ -418,8 +418,8 @@ func (s *Server) TextDocumentDidOpen(ctx context.Context, params *DidOpenTextDoc
 
 // TextDocumentDidChange handles textDocument/didChange notification
 func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTextDocumentParams) error {
-	log.Info("Changed:", "uri", params.TextDocument.URI)
-	log.Info(params.ContentChanges[0].Text)
+	log.Info("Changed:", "uri", params.TextDocument.URI, "len",
+		len(params.ContentChanges[0].Text))
 	// For now, just store the full content
 	if len(params.ContentChanges) > 0 {
 		s.documents[params.TextDocument.URI] = params.ContentChanges[0].Text
@@ -429,9 +429,11 @@ func (s *Server) TextDocumentDidChange(ctx context.Context, params *DidChangeTex
 
 // TextDocumentDidSave handles textDocument/didSave notification
 func (s *Server) TextDocumentDidSave(ctx context.Context, params *DidSaveTextDocumentParams) error {
-	log.Info("Saved:", "uri", params.TextDocument.URI)
-	// For now, just store the full content
-	s.documents[params.TextDocument.URI] = params.TextDocument.Text
+	text := params.TextDocument.Text
+	log.Info("Saved:", "uri", params.TextDocument.URI, "len", len(text))
+	if len(text) > 0 {
+		s.documents[params.TextDocument.URI] = text
+	}
 	return nil
 }
 
