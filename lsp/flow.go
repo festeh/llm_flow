@@ -35,11 +35,7 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 
 	fmt.Println(string(jsonBody))
 
-	select {
-	case <-ctx.Done():
-		return "", ctx.Err()
-	default:
-		req, err := http.NewRequestWithContext(ctx, "POST", p.Endpoint(), bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", p.Endpoint(), bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("error creating request: %v", err)
 	}
@@ -60,34 +56,36 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
+			log.Println("Cancelled")
 			return "", ctx.Err()
 		default:
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "data: ") {
-			continue
+			line := scanner.Text()
+			if !strings.HasPrefix(line, "data: ") {
+				continue
+			}
+			content := strings.TrimPrefix(line, "data: ")
+			if content == "[DONE]" {
+				break
+			}
+			var streamResp struct {
+				Choices []struct {
+					Delta struct {
+						Content string `json:"content"`
+					} `json:"delta"`
+				} `json:"choices"`
+			}
+			if err := json.Unmarshal([]byte(content), &streamResp); err != nil {
+				return "", fmt.Errorf("error parsing response: %v", err)
+			}
+			choice := streamResp.Choices[0].Delta.Content
+			buffer.WriteString(choice)
+			if _, err = fmt.Fprint(w, choice); err != nil {
+				return "", fmt.Errorf("error writing response: %v", err)
+			}
 		}
-		content := strings.TrimPrefix(line, "data: ")
-		if content == "[DONE]" {
-			break
+		if err := scanner.Err(); err != nil {
+			return "", err
 		}
-		var streamResp struct {
-			Choices []struct {
-				Delta struct {
-					Content string `json:"content"`
-				} `json:"delta"`
-			} `json:"choices"`
-		}
-		if err := json.Unmarshal([]byte(content), &streamResp); err != nil {
-			return "", fmt.Errorf("error parsing response: %v", err)
-		}
-		choice := streamResp.Choices[0].Delta.Content
-		buffer.WriteString(choice)
-		if _, err = fmt.Fprint(w, choice); err != nil {
-			return "", fmt.Errorf("error writing response: %v", err)
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return "", err
 	}
 	res := buffer.String()
 	log.Println("Result", res)
