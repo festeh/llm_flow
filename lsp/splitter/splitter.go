@@ -1,6 +1,7 @@
 package splitter
 
 import (
+	"github.com/festeh/llm_flow/lsp/constants"
 	"log"
 	"strings"
 )
@@ -27,7 +28,7 @@ func New(model string, override *Splitter) Splitter {
 }
 
 func GetFimNaiveSplitter(text string) SplitFn {
-	parts := strings.Split(text, "<|FIM|>")
+	parts := strings.Split(text, constants.FIM_TOKEN)
 	var prefix, suffix string
 	if len(parts) != 2 {
 		log.Println("error splitting text into prefix and suffix")

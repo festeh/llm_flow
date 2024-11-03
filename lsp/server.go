@@ -443,7 +443,6 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 	}
 	log.Println("Predicting with: ", provider)
 	return Flow(provider, splitFn, ctx, w)
-	return nil
 }
 
 type DidSaveTextDocumentParams struct {
