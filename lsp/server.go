@@ -113,7 +113,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		}
 		id := params.ID
 		log.Info("Cancel", "id", id)
-		log.Info("Active predictions", "predictions", s.activePredictions)
+		log.Info("Active predictions", "predictions", fmt.Sprintf("%+v", s.activePredictions))
 		cancel, ok := s.activePredictions[id]
 		if ok {
 			cancel()
