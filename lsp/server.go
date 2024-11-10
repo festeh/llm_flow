@@ -22,7 +22,7 @@ type Server struct {
 	mu                sync.Mutex
 	clients           map[net.Conn]struct{}
 	providers         map[string]provider.Provider
-	activePredictions map[interface{}]context.CancelFunc
+	activePredictions map[int]context.CancelFunc
 	predictionsMu     sync.Mutex
 }
 
@@ -42,7 +42,7 @@ func NewServer(w io.Writer) *Server {
 		writer:            w,
 		clients:           make(map[net.Conn]struct{}),
 		providers:         providers,
-		activePredictions: make(map[interface{}]context.CancelFunc),
+		activePredictions: make(map[int]context.CancelFunc),
 	}
 }
 
@@ -58,9 +58,10 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 	// Parse the JSON-RPC message
 	var header struct {
 		Method string          `json:"method"`
-		ID     interface{}     `json:"id,omitempty"`
+		ID     int             `json:"id,omitempty"`
 		Params json.RawMessage `json:"params"`
 	}
+	header.ID = -1
 	if err := json.Unmarshal(message, &header); err != nil {
 		return fmt.Errorf("error parsing message: %v", err)
 	}
@@ -105,7 +106,15 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "cancel_predict_editor":
 		s.predictionsMu.Lock()
-		for id, cancel := range s.activePredictions {
+		params := CancelParams{}
+		err := json.Unmarshal(header.Params, &params)
+		if err != nil {
+			log.Info("Err in cancel", err)
+		}
+		id := params.ID
+		log.Info("Cancel", "id", id)
+		cancel, ok := s.activePredictions[id]
+		if ok {
 			cancel()
 			delete(s.activePredictions, id)
 			log.Info("Cancelled prediction %v", id)
@@ -211,7 +220,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 	}
 
 	// Send response for requests (methods with IDs)
-	if header.ID != nil {
+	if header.ID != -1 {
 		response := map[string]interface{}{
 			"jsonrpc": "2.0",
 			"id":      header.ID,
@@ -526,6 +535,10 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 
 type DidSaveTextDocumentParams struct {
 	TextDocument TextDocumentItem `json:"textDocument"`
+}
+
+type CancelParams struct {
+	ID int `json:"id"`
 }
 
 // TextDocumentCompletion handles textDocument/completion request
