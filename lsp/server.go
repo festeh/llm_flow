@@ -113,7 +113,6 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		}
 		id := params.ID
 		log.Info("Cancel", "id", id)
-		log.Info("Active predictions", "length", len(s.activePredictions), "predictions", fmt.Sprintf("%+v", s.activePredictions))
 		cancel, ok := s.activePredictions[id]
 		if ok {
 			cancel()
@@ -128,7 +127,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		if err := json.Unmarshal(header.Params, &params); err != nil {
 			return fmt.Errorf("invalid predict params: %v", err)
 		}
-		log.Debug("Got", "params", params)
+		log.Info("got predict_request", "id", header.ID, "line", params.Line, "pos", params.Pos)
 		if params.ProviderAndModel == "" {
 			params.ProviderAndModel = "codestral/codestral-latest"
 		}
@@ -144,6 +143,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 			defer pw.Close()
 			content, err := s.PredictEditor(predCtx, pw, params)
 
+			log.Info("Done", "id", header.ID)
 			// Clean up prediction tracking
 			s.predictionsMu.Lock()
 			delete(s.activePredictions, header.ID)

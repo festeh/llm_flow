@@ -10,15 +10,7 @@ import (
 )
 
 func main() {
-	// Set up logging to a file
-	// logFile, err := os.OpenFile("lsp-server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer logFile.Close()
-	// log.SetOutput(logFile)
-
-  log.SetTimeFormat(time.StampMilli)
+	log.SetTimeFormat(time.StampMilli)
 
 	ctx := context.Background()
 	server := lsp.NewServer(os.Stdout)
