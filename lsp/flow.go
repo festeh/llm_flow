@@ -48,12 +48,12 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 		return "", fmt.Errorf("error making request: %v", err)
 	}
 	defer resp.Body.Close()
-
+	log.Info("request was sent")
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
-			log.Info("Cancelled")
+			log.Info("Flow is cancelled")
 			return "", ctx.Err()
 		default:
 			line := scanner.Text()
@@ -76,9 +76,11 @@ func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w
 			}
 			choice := streamResp.Choices[0].Delta.Content
 			buffer.WriteString(choice)
-			if _, err = fmt.Fprint(w, choice); err != nil {
-				return "", fmt.Errorf("error writing response: %v", err)
-			}
+
+			//    // write to streaming writer
+			// if _, err = fmt.Fprint(w, choice); err != nil {
+			// 	return "", fmt.Errorf("error writing response: %v", err)
+			// }
 		}
 		if err := scanner.Err(); err != nil {
 			return "", err

@@ -138,20 +138,19 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		s.activePredictions[header.ID] = cancel
 		s.predictionsMu.Unlock()
 
-		pr, pw := io.Pipe()
+		_, pw := io.Pipe()
 		go func() {
 			defer pw.Close()
 			content, err := s.PredictEditor(predCtx, pw, params)
-
-			log.Info("Done", "id", header.ID)
 			// Clean up prediction tracking
-			s.predictionsMu.Lock()
-			delete(s.activePredictions, header.ID)
-			s.predictionsMu.Unlock()
 			if err != nil {
-				log.Error("Prediction", "error", err)
+				log.Error("Prediction", "error", err, "id", header.ID)
+				s.predictionsMu.Lock()
+				s.sendCancel(header.ID)
+				s.predictionsMu.Unlock()
 				return
 			}
+			log.Info("Done", "id", header.ID)
 			// Send completion notification after prediction is done
 			response := map[string]interface{}{
 				"jsonrpc": "2.0",
@@ -161,20 +160,23 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 					Content: content,
 				},
 			}
+			s.predictionsMu.Lock()
+			delete(s.activePredictions, header.ID)
 			s.sendResponse(response)
+			s.predictionsMu.Unlock()
 		}()
 
-		scanner := bufio.NewScanner(pr)
-		for scanner.Scan() {
-			// _ := map[string]interface{}{
-			// 	"jsonrpc": "2.0",
-			// 	"method":  "predict/response",
-			// 	"params": PredictResponse{
-			// 		Content: scanner.Text(),
-			// 	},
-			// }
-			// s.sendResponse(response)
-		}
+		// scanner := bufio.NewScanner(pr)
+		// for scanner.Scan() {
+		// _ := map[string]interface{}{
+		// 	"jsonrpc": "2.0",
+		// 	"method":  "predict/response",
+		// 	"params": PredictResponse{
+		// 		Content: scanner.Text(),
+		// 	},
+		// }
+		// s.sendResponse(response)
+		// }
 		return nil
 
 	case "predict":
@@ -257,6 +259,18 @@ func (s *Server) sendResponse(response interface{}) error {
 	}
 
 	return nil
+}
+
+func (s *Server) sendCancel(id int) {
+	response := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      id,
+		"error": map[string]interface{}{
+			"code":    -32800,
+			"message": "Cancelled",
+		},
+	}
+	s.sendResponse(response)
 }
 
 // Serve starts the LSP server on the specified address
