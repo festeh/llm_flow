@@ -25,16 +25,14 @@ func newCodestral() (*Codestral, error) {
 	return &Codestral{key: key, model: "codestral-latest"}, nil
 }
 
-func (c *Codestral) GetRequestBody(splitFn splitter.SplitFn) (map[string]interface{}, error) {
+func (c *Codestral) GetRequestBody(prefixSuffix splitter.PrefixSuffix) (map[string]interface{}, error) {
 	data := map[string]interface{}{
-		"model": c.model,
+		"model":       c.model,
 		"max_tokens":  64,
 		"temperature": 0,
-		"stream": true,
-	}
-
-	if err := splitFn(&data); err != nil {
-		return nil, err
+		"stream":      true,
+		"prefix":      prefixSuffix.Prefix,
+		"suffix":      prefixSuffix.Suffix,
 	}
 	return data, nil
 }
@@ -45,4 +43,8 @@ func (c *Codestral) GetAuthHeader() string {
 
 func (c *Codestral) Endpoint() string {
 	return "https://codestral.mistral.ai/v1/fim/completions"
+}
+
+func (c *Codestral) SetModel(model string) {
+
 }

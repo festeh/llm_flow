@@ -15,15 +15,15 @@ import (
 	"github.com/festeh/llm_flow/lsp/splitter"
 )
 
-func Flow(p provider.Provider, splitter splitter.SplitFn, ctx context.Context, w io.Writer) (string, error) {
+func Flow(p provider.Provider, prefixSuffix splitter.PrefixSuffix, ctx context.Context, w io.Writer) (string, error) {
 
 	if p, ok := p.(*provider.Dummy); ok {
-		err := p.Predict(ctx, w, splitter)
+		err := p.Predict(ctx, w, prefixSuffix)
 		return "dummy result", err
 	}
 
 	var buffer strings.Builder
-	reqBody, err := p.GetRequestBody(splitter)
+	reqBody, err := p.GetRequestBody(prefixSuffix)
 	if err != nil {
 		return "", fmt.Errorf("error getting request body: %v", err)
 	}

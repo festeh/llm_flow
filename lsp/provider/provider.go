@@ -8,9 +8,10 @@ import (
 
 type Provider interface {
 	Name() string
-	GetRequestBody(splitter.SplitFn) (map[string]interface{}, error)
+	GetRequestBody(splitter.PrefixSuffix) (map[string]interface{}, error)
 	GetAuthHeader() string
   Endpoint() string
+  SetModel(string)
 }
 
 func NewProvider(name string) (Provider, error) {
@@ -19,6 +20,8 @@ func NewProvider(name string) (Provider, error) {
 		return newCodestral()
 	case "dummy":
 		return Dummy{}, nil
+  case "huggingface":
+    return newHuggingface()
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", name)
 	}

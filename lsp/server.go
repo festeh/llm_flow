@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/charmbracelet/log"
-	"github.com/festeh/llm_flow/lsp/constants"
 	"github.com/festeh/llm_flow/lsp/provider"
 	"github.com/festeh/llm_flow/lsp/splitter"
 	"io"
@@ -29,7 +28,7 @@ type Server struct {
 // NewServer creates a new LSP server instance
 func NewServer(w io.Writer) *Server {
 	providers := make(map[string]provider.Provider)
-	for _, name := range []string{"codestral", "dummy"} {
+	for _, name := range []string{"codestral", "dummy", "huggingface"} {
 		if provider, err := provider.NewProvider(name); err == nil {
 			log.Info("Loaded", "provider", name)
 			providers[name] = provider
@@ -467,8 +466,8 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 		return fmt.Errorf("invalid provider/model format: must be in format provider/model")
 	}
 	providerName := parts[0]
-	model := parts[1]
 	provider, ok := s.providers[providerName]
+	provider.SetModel(parts[1])
 	if !ok {
 		log.Error("provider not found")
 		log.Error("available providers: ")
@@ -477,15 +476,8 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 		}
 		return fmt.Errorf("unknown provider: %s", providerName)
 	}
-	splitName := splitter.New(model, nil)
-	var splitFn splitter.SplitFn
-	switch splitName {
-	case splitter.FimNaive:
-		splitFn = splitter.GetFimNaiveSplitter(text)
-	default:
-		return fmt.Errorf("unsupported splitter: %d", splitName)
-	}
-	_, err := Flow(provider, splitFn, ctx, w)
+	ps := splitter.PrefixSuffix{Prefix: text}
+	_, err := Flow(provider, ps, ctx, w)
 	return err
 }
 
@@ -504,48 +496,40 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 		}
 		return "", fmt.Errorf("unknown provider: %s", providerName)
 	}
-	splitName := splitter.New(model, nil)
-	var splitFn splitter.SplitFn
-	switch splitName {
-	case splitter.FimNaive:
-		// Get document content
-		doc, exists := s.documents[params.URI]
-		if !exists {
-			return "", fmt.Errorf("document not found: %s", params.URI)
-		}
-
-		// Split document into lines
-		lines := strings.Split(doc, "\n")
-		if params.Line >= len(lines) {
-			return "", fmt.Errorf("line number out of range: %d", params.Line)
-		}
-
-		currentLine := lines[params.Line]
-		prefix := strings.Join(lines[:params.Line], "\n")
-		if params.Line > 0 {
-			prefix += "\n"
-		}
-
-		pos := params.Pos
-		suffix := ""
-		if pos >= len(currentLine) {
-			prefix += currentLine
-		} else {
-			prefix += currentLine[:pos]
-			suffix = currentLine[pos:]
-		}
-
-		if params.Line < len(lines)-1 {
-			suffix += "\n" + strings.Join(lines[params.Line+1:], "\n")
-		}
-
-		// Combine with FIM token
-		text := prefix + constants.FIM_TOKEN + suffix
-		splitFn = splitter.GetFimNaiveSplitter(text)
-	default:
-		return "", fmt.Errorf("unsupported splitter: %d", splitName)
+	provider.SetModel(model)
+	// Get document content
+	doc, exists := s.documents[params.URI]
+	if !exists {
+		return "", fmt.Errorf("document not found: %s", params.URI)
 	}
-	return Flow(provider, splitFn, ctx, w)
+
+	// Split document into lines
+	lines := strings.Split(doc, "\n")
+	if params.Line >= len(lines) {
+		return "", fmt.Errorf("line number out of range: %d", params.Line)
+	}
+
+	currentLine := lines[params.Line]
+	prefix := strings.Join(lines[:params.Line], "\n")
+	if params.Line > 0 {
+		prefix += "\n"
+	}
+
+	pos := params.Pos
+	suffix := ""
+	if pos >= len(currentLine) {
+		prefix += currentLine
+	} else {
+		prefix += currentLine[:pos]
+		suffix = currentLine[pos:]
+	}
+
+	if params.Line < len(lines)-1 {
+		suffix += "\n" + strings.Join(lines[params.Line+1:], "\n")
+	}
+
+	prefixSuffix := splitter.PrefixSuffix{Prefix: prefix, Suffix: suffix}
+	return Flow(provider, prefixSuffix, ctx, w)
 }
 
 type DidSaveTextDocumentParams struct {

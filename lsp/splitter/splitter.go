@@ -10,6 +10,11 @@ type Splitter int
 
 type SplitFn func(*map[string]interface{}) error
 
+type PrefixSuffix struct {
+  Prefix string
+  Suffix string
+}
+
 const (
 	FimNaive Splitter = iota
 	Fim
@@ -26,6 +31,7 @@ func New(model string, override *Splitter) Splitter {
 	}
 	return FimNaive
 }
+
 
 func GetFimNaiveSplitter(text string) SplitFn {
 	parts := strings.Split(text, constants.FIM_TOKEN)

@@ -16,12 +16,8 @@ func (b Dummy) Name() string {
 	return "dummy"
 }
 
-func (b *Dummy) Predict(ctx context.Context, w io.Writer, splitter splitter.SplitFn) error {
+func (b *Dummy) Predict(ctx context.Context, w io.Writer, prefixSuffix splitter.PrefixSuffix) error {
 	data := make(map[string]interface{})
-	if err := splitter(&data); err != nil {
-		log.Println("error (!) splitting text into prefix and suffix")
-		return err
-	}
 	log.Println("Being called with: ", data)
 	for i := 0; i < 10; i++ {
 		select {
@@ -40,10 +36,14 @@ func (b Dummy) GetAuthHeader() string {
 	return "dummy"
 }
 
-func (b Dummy) GetRequestBody(splitter.SplitFn) (map[string]interface{}, error) {
+func (b Dummy) GetRequestBody(splitter.PrefixSuffix) (map[string]interface{}, error) {
 	return map[string]interface{}{}, nil
 }
 
 func (b Dummy) Endpoint() string {
-  return "dummy"
+	return "dummy"
+}
+
+func (b Dummy) SetModel(model string) {
+	return
 }
