@@ -107,10 +107,5 @@ func handleNonStreamingResponse(body io.ReadCloser, buffer *strings.Builder, p p
 		return fmt.Errorf("error validating response: %v", err)
 	}
 	buffer.WriteString(response.GetResult())
-	// if len(response.Choices) == 0 {
-	// 	log.Error("Error", "resp", response, "body", string(bodyBytes))
-	// 	return fmt.Errorf("no choices in response")
-	// }
-	// buffer.WriteString(response.Choices[0].Text)
 	return nil
 }
