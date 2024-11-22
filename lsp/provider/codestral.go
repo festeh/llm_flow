@@ -48,3 +48,7 @@ func (c *Codestral) Endpoint() string {
 func (c *Codestral) SetModel(model string) {
 
 }
+
+func (c *Codestral) IsStreaming() bool {
+	return true
+}

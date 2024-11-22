@@ -12,14 +12,13 @@ type Provider interface {
 	GetAuthHeader() string
   Endpoint() string
   SetModel(string)
+  IsStreaming() bool
 }
 
 func NewProvider(name string) (Provider, error) {
 	switch name {
 	case "codestral":
 		return newCodestral()
-	case "dummy":
-		return Dummy{}, nil
   case "huggingface":
     return newHuggingface()
 	default:

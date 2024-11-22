@@ -58,3 +58,7 @@ func (c *Huggingface) Endpoint() string {
 func (c *Huggingface) SetModel(model string) {
 	c.model = model
 }
+
+func (c *Huggingface) IsStreaming() bool {
+	return c.streaming
+}
