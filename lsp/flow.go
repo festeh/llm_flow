@@ -59,10 +59,6 @@ func Flow(p provider.Provider, prefixSuffix splitter.PrefixSuffix, ctx context.C
 		}
 	}
 
-	res := buffer.String()
-	log.Debug("Done", "result", res)
-	return res, nil
-}
 
 func handleStreamingResponse(ctx context.Context, body io.ReadCloser, buffer *strings.Builder) error {
 	scanner := bufio.NewScanner(body)
