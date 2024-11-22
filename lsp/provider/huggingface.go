@@ -13,26 +13,22 @@ type Huggingface struct {
 	streaming bool
 }
 
-type HuggingfaceSingleResponse struct {
+type HuggingfaceResponse []struct {
 	GeneratedText string `json:"generated_text"`
 }
 
-type HuggingfaceResponse struct {
-	Items []HuggingfaceSingleResponse
-}
-
 func (h *HuggingfaceResponse) Validate() error {
-	if len(h.Items) == 0 {
+	if len(*h) == 0 {
 		return fmt.Errorf("no items in Huggingface response")
 	}
-	if h.Items[0].GeneratedText == "" {
+	if (*h)[0].GeneratedText == "" {
 		return fmt.Errorf("generated text is empty")
 	}
 	return nil
 }
 
 func (h *HuggingfaceResponse) GetResult() string {
-	return h.Items[0].GeneratedText
+	return (*h)[0].GeneratedText
 }
 
 func (c *Huggingface) Name() string {
