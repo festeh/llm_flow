@@ -13,6 +13,10 @@ type Huggingface struct {
 	streaming bool
 }
 
+type HuggingfaceResponse struct {
+	GeneratedText string `json:"generated_text"`
+}
+
 func (c *Huggingface) Name() string {
 	return "Huggingface"
 }
@@ -60,4 +64,8 @@ func (c *Huggingface) SetModel(model string) {
 
 func (c *Huggingface) IsStreaming() bool {
 	return c.streaming
+}
+
+func (c *Huggingface) NewResponse() Response {
+	return &HuggingfaceResponse{}
 }
