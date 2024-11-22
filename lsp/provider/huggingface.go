@@ -17,6 +17,17 @@ type HuggingfaceResponse struct {
 	GeneratedText string `json:"generated_text"`
 }
 
+func (h *HuggingfaceResponse) Validate() error {
+	if h.GeneratedText == "" {
+		return fmt.Errorf("generated text is empty")
+	}
+	return nil
+}
+
+func (h *HuggingfaceResponse) GetResult() string {
+	return h.GeneratedText
+}
+
 func (c *Huggingface) Name() string {
 	return "Huggingface"
 }
