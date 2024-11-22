@@ -53,7 +53,7 @@ func (c *Codestral) IsStreaming() bool {
 	return true
 }
 
-func (c *Codestral) OutputStructure() any {
+func (c *Codestral) NewResponse() any {
 	var response struct {
 		Choices []struct {
 			Text string `json:"text"`
