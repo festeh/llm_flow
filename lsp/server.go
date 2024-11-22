@@ -28,7 +28,7 @@ type Server struct {
 // NewServer creates a new LSP server instance
 func NewServer(w io.Writer) *Server {
 	providers := make(map[string]provider.Provider)
-	for _, name := range []string{"codestral", "dummy", "huggingface"} {
+	for _, name := range []string{"codestral", "huggingface"} {
 		if provider, err := provider.NewProvider(name); err == nil {
 			log.Info("Loaded", "provider", name)
 			providers[name] = provider
@@ -46,10 +46,11 @@ func NewServer(w io.Writer) *Server {
 }
 
 type PredictEditorParams struct {
-	ProviderAndModel string `json:"providerAndModel"`
-	URI              string `json:"uri"`
-	Line             int    `json:"line"`
-	Pos              int    `json:"pos"`
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
+	URI      string `json:"uri"`
+	Line     int    `json:"line"`
+	Pos      int    `json:"pos"`
 }
 
 // HandleMessage processes a single LSP message
@@ -127,8 +128,11 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 			return fmt.Errorf("invalid predict params: %v", err)
 		}
 		log.Info("got predict_request", "id", header.ID, "line", params.Line, "pos", params.Pos)
-		if params.ProviderAndModel == "" {
-			params.ProviderAndModel = "codestral/codestral-latest"
+		if params.Provider == "" {
+			params.Provider = "codestral"
+		}
+		if params.Model == "" {
+			params.Model = "codestral-latest"
 		}
 
 		// Create cancellable context
@@ -482,21 +486,15 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 }
 
 func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictEditorParams) (string, error) {
-	parts := strings.Split(params.ProviderAndModel, "/")
-	if len(parts) != 2 {
-		return "", fmt.Errorf("invalid provider/model format: must be in format provider/model")
-	}
-	providerName := parts[0]
-	model := parts[1]
-	provider, ok := s.providers[providerName]
+	provider, ok := s.providers[params.Provider]
 	if !ok {
 		log.Error("provider not found")
 		for k, v := range s.providers {
 			log.Error("%s: %s", k, v)
 		}
-		return "", fmt.Errorf("unknown provider: %s", providerName)
+		return "", fmt.Errorf("unknown provider: %s", params.Provider)
 	}
-	provider.SetModel(model)
+	provider.SetModel(params.Model)
 	// Get document content
 	doc, exists := s.documents[params.URI]
 	if !exists {

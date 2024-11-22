@@ -52,3 +52,12 @@ func (c *Codestral) SetModel(model string) {
 func (c *Codestral) IsStreaming() bool {
 	return true
 }
+
+func (c *Codestral) OutputStructure() any {
+	var response struct {
+		Choices []struct {
+			Text string `json:"text"`
+		} `json:"choices"`
+	}
+	return response
+}

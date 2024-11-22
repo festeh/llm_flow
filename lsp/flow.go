@@ -17,11 +17,6 @@ import (
 
 func Flow(p provider.Provider, prefixSuffix splitter.PrefixSuffix, ctx context.Context, w io.Writer) (string, error) {
 
-	if p, ok := p.(*provider.Dummy); ok {
-		err := p.Predict(ctx, w, prefixSuffix)
-		return "dummy result", err
-	}
-
 	var buffer strings.Builder
 	reqBody, err := p.GetRequestBody(prefixSuffix)
 	if err != nil {
@@ -54,7 +49,7 @@ func Flow(p provider.Provider, prefixSuffix splitter.PrefixSuffix, ctx context.C
 			return "", err
 		}
 	} else {
-		if err := handleNonStreamingResponse(resp.Body, &buffer); err != nil {
+		if err := handleNonStreamingResponse(resp.Body, &buffer, p); err != nil {
 			return "", err
 		}
 	}
@@ -97,27 +92,25 @@ func handleStreamingResponse(ctx context.Context, body io.ReadCloser, buffer *st
 	return scanner.Err()
 }
 
-func handleNonStreamingResponse(body io.ReadCloser, buffer *strings.Builder) error {
+func handleNonStreamingResponse(body io.ReadCloser, buffer *strings.Builder, p provider.Provider) error {
 	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
 		return fmt.Errorf("error reading response: %v", err)
 	}
-	var response struct {
-		Choices []struct {
-			Text string `json:"text"`
-		} `json:"choices"`
-	}
+	response := p.NewResponse()
 	if err := json.Unmarshal(bodyBytes, &response); err != nil {
+		log.Error("Error", "body", string(bodyBytes))
 		return fmt.Errorf("error parsing response: %v", err)
 	}
-	if len(response.Choices) == 0 {
-		return fmt.Errorf("no choices in response")
+	err = response.Validate()
+	if err != nil {
+		return fmt.Errorf("error validating response: %v", err)
 	}
-	buffer.WriteString(response.Choices[0].Text)
+	buffer.WriteString(response.GetResult())
+	// if len(response.Choices) == 0 {
+	// 	log.Error("Error", "resp", response, "body", string(bodyBytes))
+	// 	return fmt.Errorf("no choices in response")
+	// }
+	// buffer.WriteString(response.Choices[0].Text)
 	return nil
-}
-
-	res := buffer.String()
-	log.Debug("Done", "result", res)
-	return res, nil
 }
