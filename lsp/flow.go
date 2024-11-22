@@ -50,56 +50,67 @@ func Flow(p provider.Provider, prefixSuffix splitter.PrefixSuffix, ctx context.C
 	defer resp.Body.Close()
 	log.Info("request was sent")
 	if p.IsStreaming() {
-		scanner := bufio.NewScanner(resp.Body)
-		for scanner.Scan() {
-			select {
-			case <-ctx.Done():
-				log.Info("Flow is cancelled")
-				return "", ctx.Err()
-			default:
-				line := scanner.Text()
-				if !strings.HasPrefix(line, "data: ") {
-					continue
-				}
-				content := strings.TrimPrefix(line, "data: ")
-				if content == "[DONE]" {
-					break
-				}
-				var streamResp struct {
-					Choices []struct {
-						Delta struct {
-							Content string `json:"content"`
-						} `json:"delta"`
-					} `json:"choices"`
-				}
-				if err := json.Unmarshal([]byte(content), &streamResp); err != nil {
-					return "", fmt.Errorf("error parsing response: %v", err)
-				}
-				choice := streamResp.Choices[0].Delta.Content
-				buffer.WriteString(choice)
-			}
-			if err := scanner.Err(); err != nil {
-				return "", err
-			}
+		if err := handleStreamingResponse(ctx, resp.Body, &buffer); err != nil {
+			return "", err
 		}
 	} else {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return "", fmt.Errorf("error reading response: %v", err)
+		if err := handleNonStreamingResponse(resp.Body, &buffer); err != nil {
+			return "", err
 		}
-		var response struct {
-			Choices []struct {
-				Text string `json:"text"`
-			} `json:"choices"`
-		}
-		if err := json.Unmarshal(body, &response); err != nil {
-			return "", fmt.Errorf("error parsing response: %v", err)
-		}
-		if len(response.Choices) == 0 {
-			return "", fmt.Errorf("no choices in response")
-		}
-		buffer.WriteString(response.Choices[0].Text)
 	}
+func handleStreamingResponse(ctx context.Context, body io.ReadCloser, buffer *strings.Builder) error {
+	scanner := bufio.NewScanner(body)
+	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+			log.Info("Flow is cancelled")
+			return ctx.Err()
+		default:
+			line := scanner.Text()
+			if !strings.HasPrefix(line, "data: ") {
+				continue
+			}
+			content := strings.TrimPrefix(line, "data: ")
+			if content == "[DONE]" {
+				break
+			}
+			var streamResp struct {
+				Choices []struct {
+					Delta struct {
+						Content string `json:"content"`
+					} `json:"delta"`
+				} `json:"choices"`
+			}
+			if err := json.Unmarshal([]byte(content), &streamResp); err != nil {
+				return fmt.Errorf("error parsing response: %v", err)
+			}
+			choice := streamResp.Choices[0].Delta.Content
+			buffer.WriteString(choice)
+		}
+	}
+	return scanner.Err()
+}
+
+func handleNonStreamingResponse(body io.ReadCloser, buffer *strings.Builder) error {
+	bodyBytes, err := io.ReadAll(body)
+	if err != nil {
+		return fmt.Errorf("error reading response: %v", err)
+	}
+	var response struct {
+		Choices []struct {
+			Text string `json:"text"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal(bodyBytes, &response); err != nil {
+		return fmt.Errorf("error parsing response: %v", err)
+	}
+	if len(response.Choices) == 0 {
+		return fmt.Errorf("no choices in response")
+	}
+	buffer.WriteString(response.Choices[0].Text)
+	return nil
+}
+
 	res := buffer.String()
 	log.Debug("Done", "result", res)
 	return res, nil
