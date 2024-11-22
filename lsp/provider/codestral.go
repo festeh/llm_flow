@@ -53,11 +53,23 @@ func (c *Codestral) IsStreaming() bool {
 	return true
 }
 
-func (c *Codestral) NewResponse() any {
-	var response struct {
-		Choices []struct {
-			Text string `json:"text"`
-		} `json:"choices"`
+type CodestralResponse struct {
+	Choices []struct {
+		Text string `json:"text"`
+	} `json:"choices"`
+}
+
+func (r *CodestralResponse) Validate() error {
+	if len(r.Choices) == 0 {
+		return fmt.Errorf("no choices in response")
 	}
-	return response
+	return nil
+}
+
+func (r *CodestralResponse) GetResult() string {
+	return r.Choices[0].Text
+}
+
+func (c *Codestral) NewResponse() Response {
+	return &CodestralResponse{}
 }
