@@ -25,7 +25,7 @@ func newCodestral() (*Codestral, error) {
 	return &Codestral{key: key, model: "codestral-latest"}, nil
 }
 
-func (c *Codestral) GetRequestBody(prefixSuffix splitter.PrefixSuffix) (map[string]interface{}, error) {
+func (c *Codestral) GetRequestBody(prefixSuffix splitter.ProjectContext) (map[string]interface{}, error) {
 	data := map[string]interface{}{
 		"model":       c.model,
 		"max_tokens":  64,

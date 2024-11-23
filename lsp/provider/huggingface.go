@@ -47,14 +47,14 @@ func newHuggingface() (*Huggingface, error) {
 	return &Huggingface{key: key, model: "codellama/CodeLlama-13b-hf"}, nil
 }
 
-func (c *Huggingface) GetRequestBody(prefixSuffix splitter.PrefixSuffix) (map[string]interface{}, error) {
+func (c *Huggingface) GetRequestBody(ctx splitter.ProjectContext) (map[string]interface{}, error) {
 	parameters := map[string]interface{}{
 		"max_tokens":       32,
 		"stream":           c.streaming,
 		"return_full_text": false,
 	}
 
-	input := fmt.Sprintf("<PRE> %s <SUF>%s <MID>", prefixSuffix.Prefix, prefixSuffix.Suffix)
+	input := fmt.Sprintf("%s\n▁<PRE> %s ▁<SUF>%s ▁<MID>", ctx.File, ctx.Prefix, ctx.Suffix)
 
 	data := map[string]interface{}{
 		"parameters": parameters,

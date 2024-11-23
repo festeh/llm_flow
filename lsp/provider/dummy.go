@@ -16,7 +16,7 @@ func (b Dummy) Name() string {
 	return "dummy"
 }
 
-func (b *Dummy) Predict(ctx context.Context, w io.Writer, prefixSuffix splitter.PrefixSuffix) error {
+func (b *Dummy) Predict(ctx context.Context, w io.Writer, prefixSuffix splitter.ProjectContext) error {
 	data := make(map[string]interface{})
 	log.Println("Being called with: ", data)
 	for i := 0; i < 10; i++ {
@@ -36,7 +36,7 @@ func (b Dummy) GetAuthHeader() string {
 	return "dummy"
 }
 
-func (b Dummy) GetRequestBody(splitter.PrefixSuffix) (map[string]interface{}, error) {
+func (b Dummy) GetRequestBody(splitter.ProjectContext) (map[string]interface{}, error) {
 	return map[string]interface{}{}, nil
 }
 

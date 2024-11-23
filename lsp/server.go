@@ -480,7 +480,7 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 		}
 		return fmt.Errorf("unknown provider: %s", providerName)
 	}
-	ps := splitter.PrefixSuffix{Prefix: text}
+	ps := splitter.ProjectContext{Prefix: text}
 	_, err := Flow(provider, ps, ctx, w)
 	return err
 }
@@ -525,8 +525,8 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 	if params.Line < len(lines)-1 {
 		suffix += "\n" + strings.Join(lines[params.Line+1:], "\n")
 	}
-
-	prefixSuffix := splitter.PrefixSuffix{Prefix: prefix, Suffix: suffix}
+	filePath := strings.TrimPrefix(params.URI, "file://")
+	prefixSuffix := splitter.ProjectContext{Prefix: prefix, Suffix: suffix, File: filePath}
 	return Flow(provider, prefixSuffix, ctx, w)
 }
 

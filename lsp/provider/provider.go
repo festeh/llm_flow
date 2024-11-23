@@ -13,7 +13,7 @@ type Response interface {
 
 type Provider interface {
 	Name() string
-	GetRequestBody(splitter.PrefixSuffix) (map[string]interface{}, error)
+	GetRequestBody(splitter.ProjectContext) (map[string]interface{}, error)
 	GetAuthHeader() string
 	Endpoint() string
 	SetModel(string)

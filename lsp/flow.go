@@ -15,7 +15,7 @@ import (
 	"github.com/festeh/llm_flow/lsp/splitter"
 )
 
-func Flow(p provider.Provider, prefixSuffix splitter.PrefixSuffix, ctx context.Context, w io.Writer) (string, error) {
+func Flow(p provider.Provider, prefixSuffix splitter.ProjectContext, ctx context.Context, w io.Writer) (string, error) {
 
 	var buffer strings.Builder
 	reqBody, err := p.GetRequestBody(prefixSuffix)
@@ -38,7 +38,7 @@ func Flow(p provider.Provider, prefixSuffix splitter.PrefixSuffix, ctx context.C
 	req.Header.Set("Authorization", p.GetAuthHeader())
 
 	client := &http.Client{}
-	log.Info("Sending request...")
+	log.Info("Sending request...", "req", req)
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("error making request: %v", err)
