@@ -38,12 +38,12 @@ func Flow(p provider.Provider, prefixSuffix splitter.PrefixSuffix, ctx context.C
 	req.Header.Set("Authorization", p.GetAuthHeader())
 
 	client := &http.Client{}
+	log.Info("Sending request...")
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("error making request: %v", err)
 	}
 	defer resp.Body.Close()
-	log.Info("request was sent")
 	if p.IsStreaming() {
 		if err := handleStreamingResponse(ctx, resp.Body, &buffer); err != nil {
 			return "", err
@@ -106,6 +106,7 @@ func handleNonStreamingResponse(body io.ReadCloser, buffer *strings.Builder, p p
 	if err != nil {
 		return fmt.Errorf("error validating response: %v", err)
 	}
+	log.Info("", "Result", response.GetResult())
 	buffer.WriteString(response.GetResult())
 	return nil
 }
