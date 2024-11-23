@@ -49,8 +49,9 @@ func newHuggingface() (*Huggingface, error) {
 
 func (c *Huggingface) GetRequestBody(prefixSuffix splitter.PrefixSuffix) (map[string]interface{}, error) {
 	parameters := map[string]interface{}{
-		"max_tokens": 32,
-		"stream":     c.streaming,
+		"max_tokens":       32,
+		"stream":           c.streaming,
+		"return_full_text": false,
 	}
 
 	input := fmt.Sprintf("<PRE> %s <SUF>%s <MID>", prefixSuffix.Prefix, prefixSuffix.Suffix)
