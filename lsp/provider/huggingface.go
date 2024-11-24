@@ -39,12 +39,12 @@ func (c *Huggingface) Streaming() bool {
 	return c.streaming
 }
 
-func newHuggingface() (*Huggingface, error) {
+func newHuggingface(model string) (*Huggingface, error) {
 	key := os.Getenv("HF_API_TOKEN")
 	if key == "" {
 		return nil, fmt.Errorf("HF_API_TOKEN not found")
 	}
-	return &Huggingface{key: key, model: "codellama/CodeLlama-13b-hf"}, nil
+	return &Huggingface{key: key, model: model}, nil
 }
 
 func (c *Huggingface) GetRequestBody(ctx splitter.ProjectContext) (map[string]interface{}, error) {

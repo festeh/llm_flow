@@ -29,16 +29,8 @@ type Server struct {
 // NewServer creates a new LSP server instance
 func NewServer(w io.Writer) *Server {
 	providers := make(map[string]provider.Provider)
-	for _, name := range []string{"codestral", "huggingface"} {
-		if provider, err := provider.NewProvider(name); err == nil {
-			log.Info("Loaded", "provider", name)
-			providers[name] = provider
-		} else {
-			log.Error("Failed to load provider: %s", name)
-		}
-	}
 	return &Server{
-		config:            Config{Provider: "huggingface", Model: "codellama/CodeLlama-7b-hf"},
+		config:            Config{},
 		documents:         make(map[string]string),
 		writer:            w,
 		clients:           make(map[net.Conn]struct{}),
@@ -130,13 +122,6 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 			return fmt.Errorf("invalid predict params: %v", err)
 		}
 		log.Info("got predict_request", "id", header.ID, "line", params.Line, "pos", params.Pos)
-		if params.Provider == "" {
-			params.Provider = s.config.Provider
-		}
-		if params.Model == "" {
-			params.Model = s.config.Model
-		}
-
 		// Create cancellable context
 		predCtx, cancel := context.WithCancel(ctx)
 		s.predictionsMu.Lock()
@@ -488,15 +473,9 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 }
 
 func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictEditorParams) (string, error) {
-	provider, ok := s.providers[params.Provider]
-	if !ok {
-		log.Error("provider not found")
-		for k, v := range s.providers {
-			log.Error("%s: %s", k, v)
-		}
-		return "", fmt.Errorf("unknown provider: %s", params.Provider)
+	if s.config.Provider == nil {
+		return "", fmt.Errorf("Provider not set")
 	}
-	provider.SetModel(params.Model)
 	// Get document content
 	doc, exists := s.documents[params.URI]
 	if !exists {
@@ -529,7 +508,7 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 	}
 	filePath := strings.TrimPrefix(params.URI, "file://")
 	prefixSuffix := splitter.ProjectContext{Prefix: prefix, Suffix: suffix, File: filePath}
-	return Flow(provider, prefixSuffix, ctx, w)
+	return Flow(*s.config.Provider, prefixSuffix, ctx, w)
 }
 
 type DidSaveTextDocumentParams struct {

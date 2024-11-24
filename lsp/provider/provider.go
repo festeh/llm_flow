@@ -21,12 +21,12 @@ type Provider interface {
 	NewResponse() Response
 }
 
-func NewProvider(name string) (Provider, error) {
+func NewProvider(name string, model string) (Provider, error) {
 	switch name {
 	case "codestral":
 		return newCodestral()
 	case "huggingface":
-		return newHuggingface()
+		return newHuggingface(model)
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", name)
 	}
