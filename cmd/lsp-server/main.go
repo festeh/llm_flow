@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -10,12 +12,16 @@ import (
 )
 
 func main() {
+	port := flag.Int("port", 7777, "Server port to listen on")
+	flag.Parse()
+
 	log.SetTimeFormat(time.StampMilli)
 
 	ctx := context.Background()
 	server := lsp.NewServer(os.Stdout)
 
-	if err := server.Serve(ctx, ":7777"); err != nil {
+	addr := fmt.Sprintf(":%d", *port)
+	if err := server.Serve(ctx, addr); err != nil {
 		log.Error("Server error: %v", err)
 	}
 }
