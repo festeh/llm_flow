@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/charmbracelet/log"
-	"github.com/festeh/llm_flow/lsp/provider"
 	"io"
 	"net"
 	"strings"
@@ -20,20 +19,17 @@ type Server struct {
 	writer            io.Writer
 	mu                sync.Mutex
 	clients           map[net.Conn]struct{}
-	providers         map[string]provider.Provider
 	activePredictions map[int]context.CancelFunc
 	predictionsMu     sync.Mutex
 }
 
 // NewServer creates a new LSP server instance
 func NewServer(w io.Writer) *Server {
-	providers := make(map[string]provider.Provider)
 	return &Server{
 		config:            Config{},
 		documents:         make(map[string]string),
 		writer:            w,
 		clients:           make(map[net.Conn]struct{}),
-		providers:         providers,
 		activePredictions: make(map[int]context.CancelFunc),
 	}
 }
@@ -44,11 +40,9 @@ type SetConfigParams struct {
 }
 
 type PredictEditorParams struct {
-	Provider string `json:"provider"`
-	Model    string `json:"model"`
-	URI      string `json:"uri"`
-	Line     int    `json:"line"`
-	Pos      int    `json:"pos"`
+	URI  string `json:"uri"`
+	Line int    `json:"line"`
+	Pos  int    `json:"pos"`
 }
 
 type Header struct {
@@ -109,6 +103,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 
 	case "predict_editor":
 		s.HandlePredictEditor(header, ctx)
+
 	case "set_config":
 		var params SetConfigParams
 		if err := json.Unmarshal(header.Params, &params); err != nil {
