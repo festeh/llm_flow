@@ -34,10 +34,6 @@ func NewServer(w io.Writer) *Server {
 	}
 }
 
-type SetConfigParams struct {
-	Provider string `json:"provider"`
-	Model    string `json:"model"`
-}
 
 type PredictEditorParams struct {
 	URI  string `json:"uri"`
@@ -105,12 +101,7 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		s.HandlePredictEditor(header, ctx)
 
 	case "set_config":
-		var params SetConfigParams
-		if err := json.Unmarshal(header.Params, &params); err != nil {
-			handleErr = fmt.Errorf("error parsing set_config params: %v", err)
-		} else {
-			handleErr = s.config.SetProvider(params.Provider, params.Model)
-		}
+		handleErr = s.config.HandleSetConfig(header.Params)
 
 	case "predict":
 		return s.HandlePredictRequest(ctx, header.Params, header)
