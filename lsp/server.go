@@ -34,7 +34,6 @@ func NewServer(w io.Writer) *Server {
 	}
 }
 
-
 type PredictEditorParams struct {
 	URI  string `json:"uri"`
 	Line int    `json:"line"`
@@ -98,10 +97,10 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		s.HandleCancelPredictEditor(header)
 
 	case "predict_editor":
-		s.HandlePredictEditor(header, ctx)
+		return s.HandlePredictEditor(header, ctx)
 
 	case "set_config":
-		handleErr = s.config.HandleSetConfig(header.Params)
+		return s.config.HandleSetConfig(header.Params)
 
 	case "predict":
 		return s.HandlePredictRequest(ctx, header.Params, header)
