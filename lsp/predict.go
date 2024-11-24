@@ -56,18 +56,11 @@ func (s *Server) Predict(ctx context.Context, w io.Writer, text string, provider
 	if len(parts) != 2 {
 		return fmt.Errorf("invalid provider/model format: must be in format provider/model")
 	}
-	providerName := parts[0]
-	provider, ok := s.providers[providerName]
-	provider.SetModel(parts[1])
-	if !ok {
-		log.Error("provider not found")
-		log.Error("available providers: ")
-		for k, v := range s.providers {
-			log.Error("%s: %s", k, v)
-		}
-		return fmt.Errorf("unknown provider: %s", providerName)
+	provider := s.config.Provider
+	if provider == nil {
+		return fmt.Errorf("provider not set")
 	}
 	ps := splitter.ProjectContext{Prefix: text}
-	_, err := Flow(provider, ps, ctx, w)
+	_, err := Flow(*provider, ps, ctx, w)
 	return err
 }
