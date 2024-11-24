@@ -11,10 +11,6 @@ import (
 	"strings"
 )
 
-type PredictResponse struct {
-	Content string `json:"content"`
-}
-
 func (s *Server) HandlePredictRequest(ctx context.Context, params json.RawMessage, header Header) error {
 	var predictParams struct {
 		Text             string `json:"text"`

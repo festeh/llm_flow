@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/charmbracelet/log"
 	"github.com/festeh/llm_flow/lsp/provider"
-	"github.com/festeh/llm_flow/lsp/splitter"
 	"io"
 	"net"
 	"strings"
