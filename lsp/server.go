@@ -350,7 +350,6 @@ func (s *Server) TextDocumentDidSave(ctx context.Context, params *DidSaveTextDoc
 	return nil
 }
 
-
 type DidSaveTextDocumentParams struct {
 	TextDocument TextDocumentItem `json:"textDocument"`
 }
