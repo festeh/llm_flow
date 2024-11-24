@@ -14,8 +14,15 @@ import (
 	"sync"
 )
 
+// Config holds server configuration
+type Config struct {
+	Provider string
+	Model    string
+}
+
 // Server represents an LSP server instance
 type Server struct {
+	config            Config
 	documents         map[string]string
 	writer            io.Writer
 	mu                sync.Mutex
@@ -26,7 +33,7 @@ type Server struct {
 }
 
 // NewServer creates a new LSP server instance
-func NewServer(w io.Writer) *Server {
+func NewServer(w io.Writer, config Config) *Server {
 	providers := make(map[string]provider.Provider)
 	for _, name := range []string{"codestral", "huggingface"} {
 		if provider, err := provider.NewProvider(name); err == nil {
@@ -36,7 +43,14 @@ func NewServer(w io.Writer) *Server {
 			log.Error("Failed to load provider: %s", name)
 		}
 	}
+	if config.Provider == "" {
+		config.Provider = "codestral"
+	}
+	if config.Model == "" {
+		config.Model = "codestral-latest"
+	}
 	return &Server{
+		config:            config,
 		documents:         make(map[string]string),
 		writer:            w,
 		clients:           make(map[net.Conn]struct{}),
@@ -129,10 +143,10 @@ func (s *Server) HandleMessage(ctx context.Context, message []byte) error {
 		}
 		log.Info("got predict_request", "id", header.ID, "line", params.Line, "pos", params.Pos)
 		if params.Provider == "" {
-			params.Provider = "codestral"
+			params.Provider = s.config.Provider
 		}
 		if params.Model == "" {
-			params.Model = "codestral-latest"
+			params.Model = s.config.Model
 		}
 
 		// Create cancellable context
