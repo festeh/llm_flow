@@ -14,12 +14,6 @@ import (
 	"sync"
 )
 
-// Config holds server configuration
-type Config struct {
-	Provider string
-	Model    string
-}
-
 // Server represents an LSP server instance
 type Server struct {
 	config            Config
@@ -33,7 +27,7 @@ type Server struct {
 }
 
 // NewServer creates a new LSP server instance
-func NewServer(w io.Writer, config Config) *Server {
+func NewServer(w io.Writer) *Server {
 	providers := make(map[string]provider.Provider)
 	for _, name := range []string{"codestral", "huggingface"} {
 		if provider, err := provider.NewProvider(name); err == nil {
@@ -43,14 +37,8 @@ func NewServer(w io.Writer, config Config) *Server {
 			log.Error("Failed to load provider: %s", name)
 		}
 	}
-	if config.Provider == "" {
-		config.Provider = "codestral"
-	}
-	if config.Model == "" {
-		config.Model = "codestral-latest"
-	}
 	return &Server{
-		config:            config,
+		config:            Config{Provider: "huggingface", Model: "codellama/CodeLlama-7b-hf"},
 		documents:         make(map[string]string),
 		writer:            w,
 		clients:           make(map[net.Conn]struct{}),
