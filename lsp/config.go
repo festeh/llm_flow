@@ -3,6 +3,7 @@ package lsp
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/daulet/tokenizers"
 	"github.com/festeh/llm_flow/lsp/provider"
 )
 
@@ -13,7 +14,8 @@ type SetConfigParams struct {
 
 // Config holds server configuration
 type Config struct {
-	Provider *provider.Provider
+	Provider  *provider.Provider
+	Tokenizer *tokenizers.Tokenizer
 }
 
 func (c *Config) HandleSetConfig(params json.RawMessage) error {
