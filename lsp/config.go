@@ -3,6 +3,7 @@ package lsp
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/charmbracelet/log"
 	"github.com/daulet/tokenizers"
 	"github.com/festeh/llm_flow/lsp/provider"
 )
@@ -16,6 +17,7 @@ type SetConfigParams struct {
 type Config struct {
 	Provider  *provider.Provider
 	Tokenizer *tokenizers.Tokenizer
+	Model     *string
 }
 
 func (c *Config) HandleSetConfig(params json.RawMessage) error {
@@ -35,6 +37,7 @@ func (c *Config) SetProvider(providerName string, model string) error {
 		return err
 	}
 	c.Provider = &p
+	c.Model = &model
 	return nil
 }
 
@@ -42,12 +45,13 @@ func (c *Config) SetTokenizer() error {
 	if c.Provider == nil {
 		return fmt.Errorf("provider not set")
 	}
-	
-	tokenizer, err := tokenizers.FromPretrained((*c.Provider).Name())
+
+	tokenizer, err := tokenizers.FromPretrained(*c.Model)
 	if err != nil {
 		return fmt.Errorf("failed to create tokenizer: %v", err)
 	}
-	
-	c.Tokenizer = &tokenizer
+
+	c.Tokenizer = tokenizer
+	log.Info("Tokenizer initiazlied")
 	return nil
 }
