@@ -23,7 +23,10 @@ func (c *Config) HandleSetConfig(params json.RawMessage) error {
 	if err := json.Unmarshal(params, &configParams); err != nil {
 		return fmt.Errorf("error parsing set_config params: %v", err)
 	}
-	return c.SetProvider(configParams.Provider, configParams.Model)
+	if err := c.SetProvider(configParams.Provider, configParams.Model); err != nil {
+		return err
+	}
+	return c.SetTokenizer()
 }
 
 func (c *Config) SetProvider(providerName string, model string) error {
@@ -32,5 +35,19 @@ func (c *Config) SetProvider(providerName string, model string) error {
 		return err
 	}
 	c.Provider = &p
+	return nil
+}
+
+func (c *Config) SetTokenizer() error {
+	if c.Provider == nil {
+		return fmt.Errorf("provider not set")
+	}
+	
+	tokenizer, err := tokenizers.FromPretrained((*c.Provider).Name())
+	if err != nil {
+		return fmt.Errorf("failed to create tokenizer: %v", err)
+	}
+	
+	c.Tokenizer = &tokenizer
 	return nil
 }
