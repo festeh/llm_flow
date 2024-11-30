@@ -27,6 +27,8 @@ func NewProvider(name string, model string) (Provider, error) {
 		return newCodestral()
 	case "huggingface":
 		return newHuggingface(model)
+  case "nebius":
+    return newNebius(model)
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", name)
 	}

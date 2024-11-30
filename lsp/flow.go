@@ -38,7 +38,7 @@ func Flow(p provider.Provider, prefixSuffix splitter.ProjectContext, ctx context
 	req.Header.Set("Authorization", p.GetAuthHeader())
 
 	client := &http.Client{}
-	log.Info("Sending request...", "req", req)
+	log.Info("Sending request...")
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("error making request: %v", err)
@@ -104,6 +104,7 @@ func handleNonStreamingResponse(body io.ReadCloser, buffer *strings.Builder, p p
 	}
 	err = response.Validate()
 	if err != nil {
+		log.Error("Error validating", "body", string(bodyBytes))
 		return fmt.Errorf("error validating response: %v", err)
 	}
 	log.Info("", "Result", response.GetResult())
