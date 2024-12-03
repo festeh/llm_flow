@@ -68,6 +68,7 @@ func (n *Nebius) GetRequestBody(ctx splitter.ProjectContext) (map[string]interfa
 		"model":       n.model,
 		"temperature": 0,
 		"prompt":      prompt,
+		"stop":        []string{"<|file_sep|>"},
 	}
 	return data, nil
 }
