@@ -47,7 +47,12 @@ func newNebius(model string) (*Nebius, error) {
 }
 
 func (n *Nebius) GetRequestBody(ctx splitter.ProjectContext) (map[string]interface{}, error) {
-	prompt := fmt.Sprintf("<|fim_prefix|>%s\n%s<|fim_suffix|>%s<|fim_middle|>", ctx.File, ctx.Prefix, ctx.Suffix)
+  repoName := "<|repo_name|>"
+  fileSep := "<|file_sep|>"
+  fimPrefix := "<|fim_prefix|>"
+  fimSuffix := "<|fim_suffix|>"
+  fimMiddle := "<|fim_middle|>"
+	prompt := fmt.Sprintf("%s%s%s%s%s", fimPrefix, ctx.Prefix, fimSuffix, ctx.Suffix, fimMiddle)
 	data := map[string]interface{}{
 		"max_tokens":  32,
 		"stream":      n.streaming,
