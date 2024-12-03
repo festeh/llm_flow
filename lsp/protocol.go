@@ -24,7 +24,6 @@ type TextDocumentItem struct {
 type InitializeParams struct {
 	ProcessID int    `json:"processId"`
 	RootURI   string `json:"rootUri"`
-	Repo      string `json:"repo"`
 }
 
 type ServerInfo struct {

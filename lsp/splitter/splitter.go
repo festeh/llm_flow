@@ -11,6 +11,7 @@ type Splitter int
 type SplitFn func(*map[string]interface{}) error
 
 type ProjectContext struct {
+  Repo string
 	File   string
 	Prefix string
 	Suffix string

@@ -9,12 +9,14 @@ import (
 )
 
 type SetConfigParams struct {
+	Repo     string `json:"repo"`
 	Provider string `json:"provider"`
 	Model    string `json:"model"`
 }
 
 // Config holds server configuration
 type Config struct {
+	Repo      string
 	Provider  *provider.Provider
 	Tokenizer *tokenizers.Tokenizer
 	Model     *string
@@ -25,6 +27,7 @@ func (c *Config) HandleSetConfig(params json.RawMessage) error {
 	if err := json.Unmarshal(params, &configParams); err != nil {
 		return fmt.Errorf("error parsing set_config params: %v", err)
 	}
+	c.Repo = configParams.Repo
 	if err := c.SetProvider(configParams.Provider, configParams.Model); err != nil {
 		return err
 	}

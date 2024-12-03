@@ -100,7 +100,7 @@ func (s *Server) PredictEditor(ctx context.Context, w io.Writer, params PredictE
 		suffix += "\n" + strings.Join(lines[params.Line+1:], "\n")
 	}
 	filePath := strings.TrimPrefix(params.URI, "file://")
-	prefixSuffix := splitter.ProjectContext{Prefix: prefix, Suffix: suffix, File: filePath}
+  prefixSuffix := splitter.ProjectContext{Repo: s.config.Repo, Prefix: prefix, Suffix: suffix, File: filePath}
 	return Flow(*s.config.Provider, prefixSuffix, ctx, w)
 }
 
