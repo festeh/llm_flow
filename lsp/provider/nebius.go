@@ -3,6 +3,8 @@ package provider
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/festeh/llm_flow/lsp/splitter"
 )
@@ -52,7 +54,13 @@ func (n *Nebius) GetRequestBody(ctx splitter.ProjectContext) (map[string]interfa
   fimPrefix := "<|fim_prefix|>"
   fimSuffix := "<|fim_suffix|>"
   fimMiddle := "<|fim_middle|>"
-	prompt := fmt.Sprintf("%s%s%s%s%s", fimPrefix, ctx.Prefix, fimSuffix, ctx.Suffix, fimMiddle)
+	repoBaseName := filepath.Base(ctx.Repo)
+	relativeFilePath := strings.TrimPrefix(ctx.File, ctx.Repo+"/")
+	prompt := fmt.Sprintf("%s%s\n%s%s%s%s%s%s", 
+		repoName, repoBaseName,
+		fileSep, relativeFilePath,
+		fimPrefix, ctx.Prefix,
+		fimSuffix, ctx.Suffix)
 	data := map[string]interface{}{
 		"max_tokens":  32,
 		"stream":      n.streaming,
